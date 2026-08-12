@@ -11,6 +11,6 @@ Todo está señalado dentro de `index.html`:
 - `ASSET_PATHS`: rutas a PNG (`rod`, `hook`, `plants`, `fishes[]`).
 - `GAME_CONFIG`: velocidad/cantidad de peces y duración de destellos.
 - Giro de peces al dar la vuelta: en `drawFish()` con `ctx.scale(facingRight ? 1 : -1, 1)`.
-- Destellos + texto de captura: en `spawnSparkles()` y bloque `state.message`.
+- Destellos + popup de captura: en `spawnSparkles()`, `spawnCatchPopup()` y `state.popups`.
 
 Si una imagen no existe aún, el juego usa dibujos fallback para que siga funcionando.

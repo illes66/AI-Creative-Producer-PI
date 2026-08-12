@@ -65,7 +65,27 @@
         fishSpeedMax: 110,
         goal: 5,
         sparkleLife: 0.5,
+        popupLife: 1.2,
+        popupRiseSpeed: 72,
       };
+
+      const CATCH_PHRASES = [
+        "Creative Direction",
+        "Visual Storytelling",
+        "Marketing & Brand Communication",
+        "Creative Production",
+        "AI-Assisted Creativity",
+        "Generative AI Workflows",
+        "Rapid Prototyping",
+        "Playable Ad Development",
+        "Game Development",
+        "Unity & C#",
+        "Interactive Experiences",
+        "Creative Iteration",
+        "Data-Informed Creativity",
+        "End-to-End Production",
+        "Quality at Speed",
+      ];
 
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
@@ -98,6 +118,7 @@
       const state = {
         fish: [],
         sparkles: [],
+        popups: [],
         hook: { x: 240, y: 160, radius: 18 },
         score: 0,
         message: "¡Pesca 5 peces!",
@@ -144,6 +165,16 @@
         }
       }
 
+      function spawnCatchPopup(x, y) {
+        state.popups.push({
+          text: CATCH_PHRASES[Math.floor(Math.random() * CATCH_PHRASES.length)],
+          x,
+          y,
+          vx: rand(-18, 18),
+          life: GAME_CONFIG.popupLife,
+        });
+      }
+
       function update(dt) {
         for (const f of state.fish) {
           f.x += f.vx * dt;
@@ -153,9 +184,8 @@
           const dy = f.y - state.hook.y;
           if (Math.hypot(dx, dy) < state.hook.radius + f.h * 0.45) {
             state.score += 1;
-            state.message = "¡Pescado! ✨";
-            state.messageTimer = 1;
             spawnSparkles(f.x, f.y);
+            spawnCatchPopup(f.x, f.y - f.h * 0.65);
             Object.assign(f, createFish());
 
             if (state.score >= GAME_CONFIG.goal) {
@@ -172,6 +202,14 @@
           p.y += p.vy * dt;
           p.vx *= 0.96;
           p.vy *= 0.96;
+          return p.life > 0;
+        });
+
+        state.popups = state.popups.filter((p) => {
+          p.life -= dt;
+          p.x += p.vx * dt;
+          p.y -= GAME_CONFIG.popupRiseSpeed * dt;
+          p.vx *= 0.96;
           return p.life > 0;
         });
 
@@ -259,6 +297,27 @@
           ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
         }
         ctx.globalAlpha = 1;
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        for (const popup of state.popups) {
+          const progress = 1 - popup.life / GAME_CONFIG.popupLife;
+          const scale = 0.8 + Math.sin(progress * Math.PI) * 0.18 + progress * 0.18;
+          ctx.save();
+          ctx.translate(popup.x, popup.y);
+          ctx.scale(scale, scale);
+          ctx.globalAlpha = Math.max(0, popup.life / GAME_CONFIG.popupLife);
+          ctx.fillStyle = "#ffffff";
+          ctx.strokeStyle = "rgba(8, 52, 80, .45)";
+          ctx.lineWidth = 6;
+          ctx.font = "800 26px system-ui";
+          ctx.strokeText(popup.text, 0, 0);
+          ctx.fillText(popup.text, 0, 0);
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+        ctx.textAlign = "start";
+        ctx.textBaseline = "alphabetic";
 
         ctx.fillStyle = "#083450";
         ctx.font = "700 28px system-ui";
