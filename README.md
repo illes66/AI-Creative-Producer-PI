@@ -2,7 +2,7 @@
 Easy playable in html5 for job candidacy
 
 ## Playable rápido (cozy, pocos segundos)
-- Abre `/home/runner/work/AI-Creative-Producer-PI/AI-Creative-Producer-PI/index.html` en navegador.
+- Abre `index.html` en navegador.
 - Controles: `← → ↑ ↓` o ratón/touch para mover el anzuelo.
 - Objetivo corto: pescar 5 peces para ver el mensaje de clear.
 

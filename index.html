@@ -269,7 +269,8 @@
           ctx.strokeStyle = "rgba(0, 0, 0, .26)";
           ctx.lineWidth = 4;
           ctx.font = "800 42px system-ui";
-          const textX = canvas.width * 0.5 - 140;
+          const textW = ctx.measureText(state.message).width;
+          const textX = (canvas.width - textW) * 0.5;
           const textY = 90;
           ctx.strokeText(state.message, textX, textY);
           ctx.fillText(state.message, textX, textY);
