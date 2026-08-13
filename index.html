@@ -45,17 +45,17 @@
   <body>
     <div class="frame">
       <canvas id="game" width="960" height="540" aria-label="Juego de pesca"></canvas>
-      <div class="legend">Mueve el anzuelo con ← → y ↑ ↓ (o ratón/touch). Captura 5 peces rápido.</div>
+      <div class="legend">Move the hook ← → and ↑ ↓ (or mouse/touch). Catch the fish to know my skills.</div>
     </div>
 
     <script>
       // ===== CAMBIA AQUÍ LAS IMÁGENES (PNG) =====
       // Sustituye las rutas cuando tengas tus assets reales.
 const ASSET_PATHS = {
-  rod: "assets/rod.png",
-  hook: "assets/hook.png",
+  rod: "/rod.png",
+  // hook: "/hook.png",
   plants: "assets/plants.png",
-   fishes: ["fish1.png"]
+   fishes: ["fish1.png", "fish2"]
 
 };
 
@@ -85,12 +85,12 @@ const ASSET_PATHS = {
 
       async function loadAssets() {
         const [rod, hook, plants, ...fishes] = await Promise.all([
-          loadImage(ASSET_PATHS.rod),
+          //loadImage(ASSET_PATHS.rod),
           loadImage(ASSET_PATHS.hook),
           loadImage(ASSET_PATHS.plants),
           ...ASSET_PATHS.fishes.map(loadImage),
         ]);
-        images.rod = rod.ok ? rod.img : null;
+        //images.rod = rod.ok ? rod.img : null;
         images.hook = hook.ok ? hook.img : null;
         images.plants = plants.ok ? plants.img : null;
         images.fishes = fishes.filter((f) => f.ok).map((f) => f.img);
@@ -154,13 +154,13 @@ const ASSET_PATHS = {
           const dy = f.y - state.hook.y;
           if (Math.hypot(dx, dy) < state.hook.radius + f.h * 0.45) {
             state.score += 1;
-            state.message = "¡Pescado! ✨";
+            state.message = "Skill catched! ✨";
             state.messageTimer = 1;
             spawnSparkles(f.x, f.y);
             Object.assign(f, createFish());
 
             if (state.score >= GAME_CONFIG.goal) {
-              state.message = "¡Nivel clear!";
+              state.message = "¡You got your new member team!";
               state.messageTimer = 2;
               state.score = 0;
             }
