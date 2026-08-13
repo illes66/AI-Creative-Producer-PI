@@ -52,19 +52,19 @@
       // ===== CAMBIA AQUÍ LAS IMÁGENES (PNG) =====
       // Sustituye las rutas cuando tengas tus assets reales.
 const ASSET_PATHS = {
-  rod: "/rod.png",
-  // hook: "/hook.png",
-  plants: "assets/plants.png",
-   fishes: ["fish1.png", "fish2"]
+  rod: "rod.png",
+   hook: "hook.png",
+  plants: "plants.png",
+   fishes: ["fish1.png", "fish2.png"]
 
 };
 
       // ===== AJUSTA AQUÍ ANIMACIONES Y DIFICULTAD =====
       const GAME_CONFIG = {
-        fishCount: 10,
+        fishCount: 12,
         fishSpeedMin: 45,
         fishSpeedMax: 110,
-        goal: 10,
+        goal: 12,
         sparkleLife: 0.5,
       };
 
@@ -83,25 +83,26 @@ const ASSET_PATHS = {
         });
       }
 
-      async function loadAssets() {
-        const [rod, hook, plants, ...fishes] = await Promise.all([
-          //loadImage(ASSET_PATHS.rod),
-          loadImage(ASSET_PATHS.hook),
-          loadImage(ASSET_PATHS.plants),
-          ...ASSET_PATHS.fishes.map(loadImage),
-        ]);
-        //images.rod = rod.ok ? rod.img : null;
-        images.hook = hook.ok ? hook.img : null;
-        images.plants = plants.ok ? plants.img : null;
-        images.fishes = fishes.filter((f) => f.ok).map((f) => f.img);
-      }
+    async function loadAssets() {
+  const [rod, hook, plants, ...fishes] = await Promise.all([
+    loadImage(ASSET_PATHS.rod),
+    loadImage(ASSET_PATHS.hook),
+    loadImage(ASSET_PATHS.plants),
+    ...ASSET_PATHS.fishes.map(loadImage),
+  ]);
+
+  images.rod = rod.ok ? rod.img : null;
+  images.hook = hook.ok ? hook.img : null;
+  images.plants = plants.ok ? plants.img : null;
+  images.fishes = fishes.filter((f) => f.ok).map((f) => f.img);
+}
 
       const state = {
         fish: [],
         sparkles: [],
         hook: { x: 240, y: 160, radius: 18 },
         score: 0,
-        message: "¡Pesca 5 peces!",
+        message: "Catch my skills!",
         messageTimer: 2.5,
       };
 
@@ -115,8 +116,8 @@ const ASSET_PATHS = {
         return {
           x: leftToRight ? rand(80, 260) : rand(700, 900),
           y: rand(220, 440),
-          w: rand(58, 96),
-          h: rand(28, 44),
+          w: rand(100, 140),
+          h: rand(50, 70),
           vx: leftToRight ? speed : -speed,
           spriteIndex: Math.floor(rand(0, Math.max(images.fishes.length, 1))),
         };
@@ -157,7 +158,8 @@ const ASSET_PATHS = {
             state.message = "Skill catched! ✨";
             state.messageTimer = 1;
             spawnSparkles(f.x, f.y);
-            Object.assign(f, createFish());
+          //  Object.assign(f, createFish());
+        f.caught = true;
 
             if (state.score >= GAME_CONFIG.goal) {
               state.message = "¡You got your new member team!";
@@ -166,6 +168,7 @@ const ASSET_PATHS = {
             }
           }
         }
+        state.fish = state.fish.filter((f) => !f.caught);
 
         state.sparkles = state.sparkles.filter((p) => {
           p.life -= dt;
@@ -179,43 +182,32 @@ const ASSET_PATHS = {
         if (state.messageTimer > 0) state.messageTimer -= dt;
       }
 
-      function drawFish(f) {
-        const facingRight = f.vx >= 0;
-        const sprite = images.fishes[f.spriteIndex % (images.fishes.length || 1)] || null;
+   function drawFish(f) {
+  const facingRight = f.vx >= 0;
+  const sprite = images.fishes[f.spriteIndex % (images.fishes.length || 1)] || null;
 
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.scale(facingRight ? 1 : -1, 1); // Giro al dar la vuelta
+  ctx.save();
+  ctx.translate(f.x, f.y);
+  ctx.scale(facingRight ? 1 : -1, 1);
 
-        if (sprite) {
-          ctx.drawImage(sprite, -f.w / 2, -f.h / 2, f.w, f.h);
-        } else {
-          ctx.fillStyle = fallbackFishColors[f.spriteIndex % fallbackFishColors.length];
-          ctx.beginPath();
-          ctx.ellipse(0, 0, f.w * 0.45, f.h * 0.42, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.moveTo(-f.w * 0.38, 0);
-          ctx.lineTo(-f.w * 0.62, -f.h * 0.22);
-          ctx.lineTo(-f.w * 0.62, f.h * 0.22);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillStyle = "#10293f";
-          ctx.beginPath();
-          ctx.arc(f.w * 0.18, -f.h * 0.08, 2.8, 0, Math.PI * 2);
-          ctx.fill();
-        }
+  const targetW = 100;
+  const targetH = 100;
 
-        ctx.restore();
-      }
+  if (sprite) {
+    ctx.drawImage(sprite, -targetW / 2, -targetH / 2, targetW, targetH);
+  } else {
+    // fallback
+  }
+
+  ctx.restore();
+}
 
       function drawScene() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Plantas en primer plano
         if (images.plants) {
-          ctx.drawImage(images.plants, 0, canvas.height - 130, canvas.width, 130);
-        } else {
+ctx.drawImage(images.plants, 0, canvas.height - 180, canvas.width, 180);        } else {
           ctx.fillStyle = "rgba(8,112,68,.45)";
           for (let x = 20; x < canvas.width; x += 68) {
             ctx.fillRect(x, canvas.height - 92 - ((x / 19) % 22), 8, 86);
