@@ -1,1432 +1,4430 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mini Fishing Playable</title>
-    <style>
-      :root {
-        --bg: #23ada6;
-        --sea: #0ec4c7de;
-        --sand: #f0d8a8;
-        --ui: #132b3a;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        background: radial-gradient(circle at 50% 20%, #d8f6ff 0, #b7edff 40%, #8fdaff 100%);
-        font-family: system-ui, Arial, Helvetica;
-      }
-      .frame {
-        width: min(92vw, 1260px);
-        border: 6px solid #fff;
-        border-radius: 18px;
-        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
-        overflow: hidden;
-        background: #1e7275;
-      }
-      canvas {
-        width: 100%;
-        aspect-ratio: 16 / 9;
-        display: block;
-        background: linear-gradient(var(--bg) 0 36%, var(--sea) 36% 88%, var(--sand) 88%);
-        touch-action: none;
-      }
-      .legend {
-        padding: 10px 14px;
-        font-size: 14px;
-        color: var(--ui);
-      }
-    </style>
-  </head>
-  <body>
-    <div class="frame">
-      <canvas id="game" width="960" height="540" aria-label="Juego de pesca"></canvas>
-      <div class="legend">Move the hook ← → and ↑ ↓ (or mouse/touch). Catch the fish to know my skills.</div>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>Mini Fishing Playable</title>
+
+  <style>
+
+    :root {
+      --bg: #dfb7b7;
+      --sea: #0ec4c7de;
+      --sand: #a18b11;
+      --ui: #132b3a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          circle at 50% 20%,
+          #d8fff5 0,
+          #b7fff9 40%,
+          #326d68 100%
+        );
+
+      font-family: system-ui, Arial, Helvetica;
+    }
+
+    .frame {
+      width: min(92vw, 1260px);
+
+      border: 2px solid #12c9cfde;
+      border-radius: 18px;
+
+      box-shadow:
+        0 18px 50px rgba(0, 0, 0, 0.22);
+
+      overflow: hidden;
+      background: #1e727544;
+    }
+
+    canvas {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+
+      display: block;
+
+      background:
+        linear-gradient(
+          var(--bg) 0 36%,
+          var(--sea) 36% 88%,
+          var(--sand) 88%
+        );
+
+      touch-action: none;
+    }
+
+    .legend {
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--ui);
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+  <div class="frame">
+
+    <canvas
+      id="game"
+      width="960"
+      height="540"
+      aria-label="Not so many fishes in the sea">
+    </canvas>
+
+    <div class="legend">
+      Move the hook ← → and ↑ ↓ (or mouse/touch).
+      Catch the fish to know my skills.
     </div>
 
-    <script>
-    
-  // ============================================================
-  // ASSETS
-  // ============================================================
+  </div>
+<script>
+
+/* ============================================================
+   ============================================================
+   FISHING GAME
+   ============================================================
+   
+   LAYERS
+   
+   1. CANVAS ENVIRONMENT
+      - SKY
+      - PINK / SALMON AREA
+      - WATER
+      - SAND
+   
+   2. SEA PNG
+      - LOW ALPHA
+      - WAVE MOVEMENT
+      - LIGHT EFFECT
+   
+   3. BOAT
+      - OSCILLATION
+   
+   4. PLANTS
+   
+   5. FISH
+   
+   6. BUBBLES
+   
+   7. ROD
+   
+   8. HOOK / LINE
+   
+   ============================================================
+   ============================================================ */
+
+
+/* ============================================================
+   ASSETS
+   ============================================================ */
+
 const ASSET_PATHS = {
 
-  // Cada pez tiene dos imágenes:
-  // normal = ojos abiertos
-  // blink  = ojos cerrados
+    /* ========================================================
+       FISH 1 + FISH 2
+       ======================================================== */
 
-  fishes: [
-    {
-      normal: "fish1.png",
-      blink: "fish1_blink.png"
-    },
-    {
-      normal: "fish2.png",
-      blink: "fish2_blink.png"
-    }
-  ],
+    fishes: [
 
-  // Fish3 será un sprite sheet
-  fish3Sheet: "fish3-sheet.png",
-    fish4Sheet: "fish4-sheet.png"
+        {
+            normal: "fish1.png",
+            blink: "fish1_blink.png"
+        },
+
+        {
+            normal: "fish2.png",
+            blink: "fish2_blink.png"
+        }
+
+    ],
+
+
+    /* ========================================================
+       FISH SPRITE SHEETS
+       ======================================================== */
+
+    fish3Sheet: "fish3-sheet.png",
+    fish4Sheet: "fish4-sheet.png",
+    fish5Sheet: "fish5-sheet.png",
+
+
+    /* ========================================================
+       DIALOGUE BUBBLES
+
+       Cada imagen es un SPRITE SHEET 2x2:
+
+          ┌─────┬─────┐
+          │  0  │  1  │
+          ├─────┼─────┤
+          │  2  │  3  │
+          └─────┴─────┘
+
+       ======================================================== */
+
+  //  fish3DialogBubble: "fish3-dialog.png",
+   // fish4DialogBubble: "fish4-dialog.png",
+   // fish5DialogBubble: "fish5-dialog.png",
+
+
+    /* ========================================================
+       PLANTS
+       ======================================================== */
+
+    plants: [
+
+        "plant1-sheet.png",
+        "plant2-sheet.png",
+        "plant3-sheet.png",
+        "plant4-sheet.png",
+        "plant5-sheet.png",
+        "plant6-sheet.png"
+
+    ],
+
+
+    /* ========================================================
+       SEA / WAVES
+
+       Esta imagen NO es el background.
+
+       Es solamente la capa de olas que se coloca encima
+       del agua y por debajo de boat / plants / fish.
+
+       ======================================================== */
+
+    sea: "sea.png",
+
+
+    /* ========================================================
+       BOAT
+       ======================================================== */
+
+    boat: "boat.png",
+
+
+    /* ========================================================
+       ROD
+
+       DE MOMENTO NO UTILIZAMOS PNG.
+
+       Se mantiene el dibujo Canvas.
+
+       Cuando quieras utilizar PNG:
+
+       rod: "rod.png"
+
+       ======================================================== */
+
+    rod: null,
+
+    // rod: "rod.png",
+
+
+    /* ========================================================
+       HOOK
+
+       También continúa siendo Canvas.
+
+       ======================================================== */
+
+    hook: null,
+
+    // hook: "hook.png"
 
 };
 
-  // ============================================================
-  // GAME CONFIG
-  // ============================================================
+
+/* ============================================================
+   GAME CONFIG
+   ============================================================ */
 
 const GAME_CONFIG = {
 
-  fishCount: 12,
 
-  fishSpeedMin: 45,
-  fishSpeedMax: 110,
+    /* ========================================================
+       FISH
+       ======================================================== */
 
-  goal: 12,
+    fishCount: 12,
 
-  sparkleLife: 0.5,
+    goal: 12,
 
-  // Fish3
-  fish3FrameCount: 18,
-  fish3FPS: 8,
-  fish3Rows: 4,
-  fish3Columns: 4
+
+    fishSpeedMin: 25,
+
+    fishSpeedMax: 50,
+
+
+    fishEscapeTime: 2.5,
+
+
+    hookedFishSpeed: 100,
+
+
+    reelSpeed: 230,
+
+
+    hookRadius: 3,
+
+
+    /* ========================================================
+       BOAT
+       ======================================================== */
+
+    boat: {
+
+        x: 150,
+
+        y: 220,
+
+        w: 480,
+
+        h: 300,
+
+        catchRadius: 55
+
+    },
+
+
+    /* ========================================================
+       BOAT ANIMATION
+       ======================================================== */
+
+    boatAnimation: {
+
+        rotationAmount: 0.025,
+
+        rotationSpeed: 1.5,
+
+        bobAmount: 4,
+
+        bobSpeed: 1.8
+
+    },
+
+
+    /* ========================================================
+       SEA
+       ======================================================== */
+
+    sea: {
+
+        alpha: 0.3,
+
+        x: 0,
+
+        y: 0,
+
+        w: null,
+
+        h: null,
+
+        moveX: 8,
+
+        moveY: 3,
+
+        movementSpeed: 0.7,
+
+        shadowBlur: 18,
+
+        shadowOffsetY: 5
+
+    },
+
+
+    /* ========================================================
+       ENVIRONMENT
+       ======================================================== */
+
+    environment: {
+
+        /* ----------------------------------------------------
+           SKY
+           ---------------------------------------------------- */
+
+        skyHeight: 0.43,
+
+        skyColorTop: "#f8c8c8",
+
+        skyColorBottom: "#FCF1BD",
+
+
+        /* ----------------------------------------------------
+           WATER
+           ---------------------------------------------------- */
+
+        waterStart: 0.42,
+
+        waterEnd: 0.94,
+
+        waterTopColor: "#9DFADA",
+
+        waterBottomColor: "#7BE8C3",
+
+
+        /* ----------------------------------------------------
+           SAND
+           ---------------------------------------------------- */
+
+        sandStart: 0.94,
+
+        sandColorTop: "#f3d59b",
+
+        sandColorBottom: "#d8b778"
+
+    },
+
+
+    /* ========================================================
+       SEA SPRITE SHEET / WAVE
+       ======================================================== */
+
+    seaAnimation: {
+
+        amplitudeX: 8,
+
+        amplitudeY: 3,
+
+        speed: 0.7
+
+    },
+
+
+    /* ========================================================
+       EFFECTS
+       ======================================================== */
+
+    sparkleLife: 0.5,
+
+
+    /* ========================================================
+       FISH 3
+       ======================================================== */
+
+    fish3FrameCount: 16,
+
+    fish3FPS: 8,
+
+    fish3Rows: 4,
+
+    fish3Columns: 4,
+
+
+    /* ========================================================
+       FISH 4
+       ======================================================== */
+
+    fish4FrameCount: 16,
+
+    fish4FPS: 8,
+
+    fish4Rows: 4,
+
+    fish4Columns: 4,
+
+
+    /* ========================================================
+       FISH 5
+       ======================================================== */
+
+    fish5FrameCount: 16,
+
+    fish5FPS: 8,
+
+    fish5Rows: 4,
+
+    fish5Columns: 4,
+
+
+    /* ========================================================
+       FISH SPRITE ANIMATIONS
+       ======================================================== */
+
+    spriteAnimations: {
+
+        idle: {
+            start: 0,
+            frames: 4
+        },
+
+        hooked: {
+            start: 4,
+            frames: 4
+        },
+
+        reeling: {
+            start: 8,
+            frames: 4
+        },
+
+        released: {
+            start: 12,
+            frames: 4
+        }
+
+    },
+
+
+    /* ========================================================
+       DIALOGUE BUBBLE SPRITE SHEETS
+       ======================================================== */
+
+    dialogBubble: {
+
+        rows: 2,
+
+        columns: 2,
+
+        frames: 4,
+
+        fps: 6
+
+    },
+
+
+    /* ========================================================
+       PLANTS
+       ======================================================== */
+
+    plants: [
+
+        {
+            x: 700,
+            y: 520,
+            w: 100,
+            h: 100,
+            frames: 16,
+            fps: 1,
+            rows: 4,
+            columns: 4,
+            layer: 0
+        },
+
+        {
+            x: 550,
+            y: 525,
+            w: 150,
+            h: 150,
+            frames: 16,
+            fps: 1,
+            rows: 4,
+            columns: 4,
+            layer: 0
+        },
+
+        {
+            x: 200,
+            y: 515,
+            w: 150,
+            h: 150,
+            frames: 16,
+            fps: 1,
+            rows: 4,
+            columns: 4,
+            layer: 0
+        },
+
+        {
+            x: 250,
+            y: 525,
+            w: 120,
+            h: 120,
+            frames: 16,
+            fps: 1,
+            rows: 4,
+            columns: 4,
+            layer: 0
+        },
+
+        {
+            x: 50,
+            y: 510,
+            w: 145,
+            h: 145,
+            frames: 16,
+            fps: 1,
+            rows: 4,
+            columns: 4,
+            layer: 0
+        },
+
+        {
+            x: 300,
+            y: 525,
+            w: 110,
+            h: 110,
+            frames: 16,
+            fps: 1,
+            rows: 4,
+            columns: 4,
+            layer: 0
+        }
+
+    ]
+
 };
 
-  // ============================================================
-  // CANVAS
-  // ============================================================
 
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
+/* ============================================================
+   FISH SPAWN PLAN
+   ============================================================ */
+
+const FISH_SPAWN_PLAN = [
+
+    {
+        type: 0,
+        spawnTime: 0,
+        x: 650,
+        y: 280,
+        direction: -1,
+        speed: 70,
+        dialog: "2 many fishes in the sea...",
+        dialogDelay: 0
+    },
+
+    {
+        type: 1,
+        spawnTime: 2,
+        x: 750,
+        y: 360,
+        direction: -1,
+        speed: 80,
+        dialog: "If I was...",
+        dialogDelay: 0
+    },
+
+    {
+        type: 2,
+        spawnTime: 4,
+        x: 700,
+        y: 300,
+        direction: -1,
+        speed: 65,
+        dialog: "Hey! Catch me if you can!",
+        dialogDelay: 1
+    },
+
+    {
+        type: 3,
+        spawnTime: 7,
+        x: 850,
+        y: 400,
+        direction: -1,
+        speed: 75,
+        dialog: "Don't pull me!",
+        dialogDelay: 1.5
+    },
+
+    {
+        type: 4,
+        spawnTime: 10,
+        x: 650,
+        y: 420,
+        direction: -1,
+        speed: 60,
+        dialog: "I am too fast!",
+        dialogDelay: 2
+    }
+
+];
 
 
-  // ============================================================
-  // IMAGES
-  // ============================================================
+/* ============================================================
+   CANVAS
+   ============================================================ */
 
-  const images = {
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+/* ============================================================
+   IMAGES
+   ============================================================ */
+
+const images = {
+
     rod: null,
+
     hook: null,
-    plants: null,
 
-    // Cada elemento tendrá:
-    // {
-    //   normal: Image,
-    //   blink: Image
-    // }
-    fishes: []
-  };
+    sea: null,
 
+    boat: null,
 
-  // ============================================================
-  // FALLBACK COLORS
-  // ============================================================
+    fishes: [],
 
-  const fallbackFishColors = [
-    "#ff7f6b",
-    "#ffd36b",
-    "#92f29f",
-    "#d7a9ff"
-  ];
+    fish3Sheet: null,
 
+    fish4Sheet: null,
 
-  // ============================================================
-  // IMAGE LOADER
-  // ============================================================
+    fish5Sheet: null,
 
-  function loadImage(src) {
-    return new Promise((resolve) => {
+    plants: [],
 
-      const img = new Image();
+    fish3DialogBubble: null,
 
-      img.onload = () => {
-        resolve({
-          ok: true,
-          img
-        });
-      };
+    fish4DialogBubble: null,
 
-      img.onerror = () => {
-        console.warn("Could not load image:", src);
+    fish5DialogBubble: null
 
-        resolve({
-          ok: false,
-          img: null
-        });
-      };
-
-      img.src = src;
-    });
-  }
+};
 
 
-  // ============================================================
-  // LOAD ASSETS
-  // ============================================================
+/* ============================================================
+   RANDOM
+   ============================================================ */
 
-async function loadAssets() {
+function rand(min, max) {
 
-  // ==========================================
-  // CARGAR FISH1 Y FISH2
-  // Cada uno tiene normal + blink
-  // ==========================================
+    return Math.random() *
+        (max - min) +
+        min;
 
-  const fishPromises = ASSET_PATHS.fishes.flatMap((fish) => [
-    loadImage(fish.normal),
-    loadImage(fish.blink)
-  ]);
-
-  // ==========================================
-  // CARGAR FISH3 SPRITE SHEET
-  // ==========================================
-
-  const fish3Promise = loadImage(
-    ASSET_PATHS.fish3Sheet
-  );
-  // ==========================================
-  // CARGAR FISH4 SPRITE SHEET
-  // ==========================================
-
-  const fish4Promise = loadImage(
-    ASSET_PATHS.fish4Sheet
-  );
- 
-
-  // ==========================================
-  // GUARDAMOS FISH1 + FISH2
-  // ==========================================
-
-  images.fishes = [];
-
-  for (let i = 0; i < ASSET_PATHS.fishes.length; i++) {
-
-    const normalResult = results[i * 2];
-    const blinkResult = results[i * 2 + 1];
-
-    images.fishes.push({
-
-      normal: normalResult.ok
-        ? normalResult.img
-        : null,
-
-      blink: blinkResult.ok
-        ? blinkResult.img
-        : null
-    });
-  }
-
-
-  // ==========================================
-  // GUARDAMOS FISH3
-  // ==========================================
-
-  const fish3Result =
-    results[results.length - 1];
-
-  images.fish3Sheet =
-    fish3Result.ok
-      ? fish3Result.img
-      : null;
-
-  // ==========================================
-  // GUARDAMOS FISH4
-  // ==========================================
-
-  const fish4Result =
-    results[results.length - 1];
-
-  images.fish4Sheet =
-    fish4Result.ok
-      ? fish4Result.img
-      : null;
 }
 
 
-  // ============================================================
-  // GAME STATE
-  // ============================================================
+/* ============================================================
+   IMAGE LOADER
+   ============================================================ */
 
-  const state = {
+function loadImage(src) {
+
+    return new Promise((resolve) => {
+
+        if (!src) {
+
+            resolve({
+
+                ok: false,
+
+                img: null
+
+            });
+
+            return;
+
+        }
+
+
+        const img =
+            new Image();
+
+
+        img.onload = () => {
+
+            resolve({
+
+                ok: true,
+
+                img: img
+
+            });
+
+        };
+
+
+        img.onerror = () => {
+
+            console.warn(
+                "Could not load image:",
+                src
+            );
+
+
+            resolve({
+
+                ok: false,
+
+                img: null
+
+            });
+
+        };
+
+
+        img.src = src;
+
+    });
+
+}
+
+
+/* ============================================================
+   LOAD ASSETS
+   ============================================================ */
+
+async function loadAssets() {
+
+
+    /* ========================================================
+       FISH 1 + FISH 2
+       ======================================================== */
+
+    const fishPromises =
+        ASSET_PATHS.fishes.flatMap(
+            fish => [
+
+                loadImage(
+                    fish.normal
+                ),
+
+                loadImage(
+                    fish.blink
+                )
+
+            ]
+        );
+
+
+    /* ========================================================
+       PLANTS
+       ======================================================== */
+
+    const plantPromises =
+        ASSET_PATHS.plants.map(
+            path =>
+                loadImage(path)
+        );
+
+
+    /* ========================================================
+       OTHER
+       ======================================================== */
+
+    const otherPromises = [
+
+        loadImage(
+            ASSET_PATHS.rod
+        ),
+
+        loadImage(
+            ASSET_PATHS.hook
+        ),
+
+        loadImage(
+            ASSET_PATHS.sea
+        ),
+
+        loadImage(
+            ASSET_PATHS.boat
+        ),
+
+        loadImage(
+            ASSET_PATHS.fish3Sheet
+        ),
+
+        loadImage(
+            ASSET_PATHS.fish4Sheet
+        ),
+
+        loadImage(
+            ASSET_PATHS.fish5Sheet
+        ),
+
+        loadImage(
+            ASSET_PATHS.fish3DialogBubble
+        ),
+
+        loadImage(
+            ASSET_PATHS.fish4DialogBubble
+        ),
+
+        loadImage(
+            ASSET_PATHS.fish5DialogBubble
+        )
+
+    ];
+
+
+    const results =
+        await Promise.all([
+
+            ...fishPromises,
+
+            ...plantPromises,
+
+            ...otherPromises
+
+        ]);
+
+
+    /* ========================================================
+       FISH
+       ======================================================== */
+
+    images.fishes = [];
+
+
+    for (
+        let i = 0;
+        i < ASSET_PATHS.fishes.length;
+        i++
+    ) {
+
+        const normalResult =
+            results[i * 2];
+
+
+        const blinkResult =
+            results[i * 2 + 1];
+
+
+        images.fishes.push({
+
+            normal:
+                normalResult.ok
+                    ? normalResult.img
+                    : null,
+
+            blink:
+                blinkResult.ok
+                    ? blinkResult.img
+                    : null
+
+        });
+
+    }
+
+
+    /* ========================================================
+       INDEXES
+       ======================================================== */
+
+    const plantStart =
+        fishPromises.length;
+
+
+    const otherStart =
+        plantStart +
+        plantPromises.length;
+
+
+    /* ========================================================
+       PLANTS
+       ======================================================== */
+
+    images.plants = [];
+
+
+    for (
+        let i = 0;
+        i < ASSET_PATHS.plants.length;
+        i++
+    ) {
+
+        const result =
+            results[
+                plantStart + i
+            ];
+
+
+        images.plants.push(
+
+            result.ok
+                ? result.img
+                : null
+
+        );
+
+    }
+
+
+    /* ========================================================
+       OTHER ASSETS
+       ======================================================== */
+
+    images.rod =
+        results[
+            otherStart
+        ].ok
+
+            ? results[
+                otherStart
+            ].img
+
+            : null;
+
+
+    images.hook =
+        results[
+            otherStart + 1
+        ].ok
+
+            ? results[
+                otherStart + 1
+            ].img
+
+            : null;
+
+
+    images.sea =
+        results[
+            otherStart + 2
+        ].ok
+
+            ? results[
+                otherStart + 2
+            ].img
+
+            : null;
+
+
+    images.boat =
+        results[
+            otherStart + 3
+        ].ok
+
+            ? results[
+                otherStart + 3
+            ].img
+
+            : null;
+
+
+    images.fish3Sheet =
+        results[
+            otherStart + 4
+        ].ok
+
+            ? results[
+                otherStart + 4
+            ].img
+
+            : null;
+
+
+    images.fish4Sheet =
+        results[
+            otherStart + 5
+        ].ok
+
+            ? results[
+                otherStart + 5
+            ].img
+
+            : null;
+
+
+    images.fish5Sheet =
+        results[
+            otherStart + 6
+        ].ok
+
+            ? results[
+                otherStart + 6
+            ].img
+
+            : null;
+
+
+    images.fish3DialogBubble =
+        results[
+            otherStart + 7
+        ].ok
+
+            ? results[
+                otherStart + 7
+            ].img
+
+            : null;
+
+
+    images.fish4DialogBubble =
+        results[
+            otherStart + 8
+        ].ok
+
+            ? results[
+                otherStart + 8
+            ].img
+
+            : null;
+
+
+    images.fish5DialogBubble =
+        results[
+            otherStart + 9
+        ].ok
+
+            ? results[
+                otherStart + 9
+            ].img
+
+            : null;
+
+}
+
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+
+const state = {
 
     fish: [],
+
+    nextSpawnIndex: 0,
+
+    gameTime: 0,
+
+
+    plants: [],
+
 
     sparkles: [],
 
     bubbles: [],
 
+
+    /* ========================================================
+       ENVIRONMENT ANIMATION TIME
+       ======================================================== */
+
+    environmentTime: 0,
+
+
+    /* ========================================================
+       HOOK
+       ======================================================== */
+
     hook: {
-      x: 335,
-      y: 315,
-      radius: 18
+
+        x: 240,
+
+        y: 160,
+
+        radius:
+            GAME_CONFIG.hookRadius
+
     },
+
+
+    hookedFish: null,
+
 
     score: 0,
 
-    message: "Catch my skills!",
 
-    messageTimer: 2.5
-  };
+    message:
+        "Catch my skills!",
 
+    messageTimer:
+        2.5
 
-  // ============================================================
-  // RANDOM NUMBER
-  // ============================================================
-
-  function rand(min, max) {
-    return Math.random() * (max - min) + min;
-  }
+};
 
 
-  // ============================================================
-  // CREATE FISH
-  // ============================================================
+/* ============================================================
+   FISH STATES
+   ============================================================ */
 
-function createFish() {
+const FISH_STATE = {
 
-  const leftToRight = Math.random() > 0.5;
+    IDLE: "idle",
 
-  const speed = rand(
-    GAME_CONFIG.fishSpeedMin,
-    GAME_CONFIG.fishSpeedMax
-  );
+    HOOKED: "hooked",
 
-  // 0 = fish1
-  // 1 = fish2
-  // 2 = fish3
+    REELING: "reeling",
 
-  const fishType = Math.floor(Math.random() * 3);
+    RELEASED: "released",
 
-  return {
+    LANDED: "landed"
 
-    x: leftToRight
-      ? rand(80, 260)
-      : rand(700, 900),
+};
 
-    y: rand(220, 440),
 
-    w: rand(100, 140),
-    h: rand(50, 70),
+/* ============================================================
+   CREATE FISH
+   ============================================================ */
 
-    vx: leftToRight
-      ? speed
-      : -speed,
+function createFish(config) {
 
-    // Tipo de pez
-    fishType: fishType,
+    return {
 
-    // ======================================
-    // BLINK
-    // Cada pez tiene su propio temporizador
-    // ======================================
+        fishType:
+            config.type,
 
-    blinking: false,
 
-    blinkTimer: rand(2, 5),
+        x:
+            config.x,
 
-    // ======================================
-    // SPRITE SHEET DE FISH3
-    // ======================================
+        y:
+            config.y,
 
-    spriteFrame: 0,
 
-    spriteTimer: 0
+        w:
+            180,
 
-  };
+        h:
+            180,
+
+
+        vx:
+            config.direction *
+            (
+                config.speed ||
+                rand(
+                    GAME_CONFIG.fishSpeedMin,
+                    GAME_CONFIG.fishSpeedMax
+                )
+            ),
+
+
+        direction:
+            config.direction,
+
+
+        state:
+            FISH_STATE.IDLE,
+
+
+        hookOffsetX: 0,
+
+        hookOffsetY: 0,
+
+
+        escapeTimer:
+            GAME_CONFIG.fishEscapeTime,
+
+
+        spriteFrame: 0,
+
+        spriteTimer: 0,
+
+
+        blinking: false,
+
+        blinkTimer:
+            rand(2, 5),
+
+
+        bubbleTimer:
+            rand(2, 6),
+
+
+        dialog:
+            config.dialog || "",
+
+
+        dialogDelay:
+            config.dialogDelay || 0,
+
+
+        dialogTimer: 0,
+
+        dialogVisible: false,
+
+
+        /* ====================================================
+           DIALOG BUBBLE ANIMATION
+           ==================================================== */
+
+        dialogFrame: 0,
+
+        dialogFrameTimer: 0,
+
+
+        releasedTimer: 0,
+
+
+        landed: false
+
+    };
+
 }
 
 
-  // ============================================================
-  // RESET / CREATE ALL FISH
-  // ============================================================
+/* ============================================================
+   RESET GAME
+   ============================================================ */
 
-  function resetFish() {
+function resetFish() {
 
-    state.fish = Array.from(
-      {
-        length: GAME_CONFIG.fishCount
-      },
-      createFish
-    );
-  }
+    state.fish = [];
 
+    state.nextSpawnIndex = 0;
 
-  // ============================================================
-  // CLAMP HOOK
-  // ============================================================
+    state.gameTime = 0;
 
-  function clampHook() {
+    state.hookedFish = null;
 
-    state.hook.x = Math.max(
-      80,
-      Math.min(
-        canvas.width - 60,
-        state.hook.x
-      )
-    );
-
-    state.hook.y = Math.max(
-      110,
-      Math.min(
-        canvas.height - 40,
-        state.hook.y
-      )
-    );
-  }
-
-
-  // ============================================================
-  // SPARKLES
-  // ============================================================
-
-  function spawnSparkles(x, y) {
-
-    for (let i = 0; i < 18; i++) {
-
-      const a =
-        (Math.PI * 2 * i) / 18;
-
-      const speed = rand(30, 120);
-
-      state.sparkles.push({
-
-        x: x,
-
-        y: y,
-
-        vx: Math.cos(a) * speed,
-
-        vy: Math.sin(a) * speed,
-
-        life: GAME_CONFIG.sparkleLife
-      });
-    }
-  }
-
-
-  // ============================================================
-  // BUBBLES
-  // ============================================================
-
-  function spawnBubble(f) {
-
-    state.bubbles.push({
-
-      // Slight random horizontal variation
-      x: f.x + rand(-15, 15),
-
-      // Start above the fish
-      y: f.y - 20,
-
-      // Bubble size
-      radius: rand(2, 5),
-
-      // Horizontal movement
-      vx: rand(-8, 8),
-
-      // Move upwards
-      vy: rand(-25, -45),
-
-      // Lifetime
-      life: 1,
-
-      maxLife: 1
-    });
-  }
-
-
-  // ============================================================
-  // UPDATE BUBBLES
-  // ============================================================
-
-  function updateBubbles(dt) {
-
-    state.bubbles = state.bubbles.filter((b) => {
-
-      b.life -= dt;
-
-      b.x += b.vx * dt;
-
-      b.y += b.vy * dt;
-
-      // Slight horizontal damping
-      b.vx *= 0.98;
-
-      return b.life > 0;
-    });
-  }
-
-
-  // ============================================================
-  // UPDATE GAME
-  // ============================================================
-
-  function update(dt) {
-
-
-    // ==========================================================
-    // FISH
-    // ==========================================================
-
-    for (const f of state.fish) {
-
-
-      // ==========================================
-// BLINK — solo fish1 y fish2
-// ==========================================
-
-if (f.fishType === 0 || f.fishType === 1) {
-
-  f.blinkTimer -= dt;
-
-  if (f.blinkTimer <= 0) {
-
-    f.blinking = !f.blinking;
-
-    if (f.blinking) {
-
-      // Ojos cerrados durante 0.12 segundos
-      f.blinkTimer = 0.12;
-
-    } else {
-
-      // Siguiente parpadeo aleatorio
-      f.blinkTimer = rand(2, 5);
-
-    }
-  }
 }
-      // ==========================================
-// Animación del sprite sheet de Fish3
-// ==========================================
-// ==========================================
-// SPRITE SHEET — FISH3
-// ==========================================
 
-if (f.fishType === 2 && images.fish3Sheet) {
 
-  f.spriteTimer += dt;
+/* ============================================================
+   SPAWN CONTROLLED FISH
+   ============================================================ */
 
-  const frameDuration =
-    1 / GAME_CONFIG.fish3FPS;
+function updateFishSpawning() {
 
-  if (f.spriteTimer >= frameDuration) {
+    while (
 
-    f.spriteTimer -= frameDuration;
+        state.nextSpawnIndex <
+        FISH_SPAWN_PLAN.length &&
 
-    f.spriteFrame++;
+        state.gameTime >=
+        FISH_SPAWN_PLAN[
+            state.nextSpawnIndex
+        ].spawnTime
 
-    if (
-      f.spriteFrame >=
-      GAME_CONFIG.fish3FrameCount
     ) {
-      f.spriteFrame = 0;
-    }
-  }
-}
-// SPRITE SHEET — FISH4
-// ==========================================
 
-if (f.fishType === 3 && images.fish4Sheet) {
-
-  f.spriteTimer += dt;
-
-  const frameDuration =
-    1 / GAME_CONFIG.fish4FPS;
-
-  if (f.spriteTimer >= frameDuration) {
-
-    f.spriteTimer -= frameDuration;
-
-    f.spriteFrame++;
-
-    if (
-      f.spriteFrame >=
-      GAME_CONFIG.fish4FrameCount
-    ) {
-      f.spriteFrame = 0;
-    }
-  }
-}
-
-      // --------------------------------------------------------
-      // Movement
-      // --------------------------------------------------------
-
-      f.x += f.vx * dt;
+        const config =
+            FISH_SPAWN_PLAN[
+                state.nextSpawnIndex
+            ];
 
 
-      if (
-        f.x < 44 ||
-        f.x > canvas.width - 44
-      ) {
-
-        f.vx *= -1;
-      }
-
-
-      // ========================================================
-      // BLINK
-      // ========================================================
-
-      f.blinkTimer -= dt;
-
-
-      if (f.blinkTimer <= 0) {
-
-        f.blinking = !f.blinking;
-
-
-        if (f.blinking) {
-
-          // Eyes closed
-          f.blinkTimer = 0.06;
-
-        } else {
-
-          // Time until next blink
-          f.blinkTimer = rand(2, 5);
-        }
-      }
-
-
-      // ========================================================
-      // BUBBLES
-      // ========================================================
-
-      f.bubbleTimer -= dt;
-
-
-      if (f.bubbleTimer <= 0) {
-
-        spawnBubble(f);
-
-        // Next bubble
-        f.bubbleTimer = rand(2, 6);
-      }
-
-
-      // ========================================================
-      // COLLISION WITH HOOK
-      // ========================================================
-
-      const dx =
-        f.x - state.hook.x;
-
-      const dy =
-        f.y - state.hook.y;
-
-
-      if (
-        Math.hypot(dx, dy) <
-        state.hook.radius +
-        f.h * 0.45
-      ) {
-
-
-        // ------------------------------------------------------
-        // SCORE
-        // ------------------------------------------------------
-
-        state.score += 1;
-
-
-        state.message =
-          "Skill catched! ✨";
-
-        state.messageTimer = 1;
-
-
-        // ------------------------------------------------------
-        // CATCH EFFECT
-        // ------------------------------------------------------
-
-        spawnSparkles(
-          f.x,
-          f.y
+        state.fish.push(
+            createFish(config)
         );
 
 
-        // ------------------------------------------------------
-        // REMOVE FISH
-        // ------------------------------------------------------
+        state.nextSpawnIndex++;
 
-        f.caught = true;
+    }
+
+}
 
 
-        // ------------------------------------------------------
-        // GOAL
-        // ------------------------------------------------------
+/* ============================================================
+   CREATE PLANTS
+   ============================================================ */
+
+function createPlants() {
+
+    state.plants =
+        GAME_CONFIG.plants.map(
+            (config, index) => {
+
+                return {
+
+                    x:
+                        config.x,
+
+                    y:
+                        config.y,
+
+                    w:
+                        config.w,
+
+                    h:
+                        config.h,
+
+                    index:
+                        index,
+
+                    frame:
+                        0,
+
+                    timer:
+                        0,
+
+                    frames:
+                        config.frames,
+
+                    fps:
+                        config.fps,
+
+                    rows:
+                        config.rows,
+
+                    columns:
+                        config.columns,
+
+                    layer:
+                        config.layer
+
+                };
+
+            }
+        );
+
+}
+
+
+/* ============================================================
+   UPDATE PLANTS
+   ============================================================ */
+
+function updatePlants(dt) {
+
+    for (
+        const plant of state.plants
+    ) {
 
         if (
-          state.score >=
-          GAME_CONFIG.goal
+            plant.fps <= 0
+        )
+            continue;
+
+
+        plant.timer += dt;
+
+
+        const frameDuration =
+            1 /
+            plant.fps;
+
+
+        if (
+            plant.timer >=
+            frameDuration
         ) {
 
-          state.message =
-            "¡You got your new member team!";
+            plant.timer -=
+                frameDuration;
 
-          state.messageTimer = 2;
+
+            plant.frame++;
+
+
+            if (
+                plant.frame >=
+                plant.frames
+            ) {
+
+                plant.frame = 0;
+
+            }
+
         }
-      }
+
+    }
+
+}
+
+
+/* ============================================================
+   DRAW PLANTS
+   ============================================================ */
+
+function drawPlants() {
+
+    const sortedPlants =
+        [...state.plants].sort(
+            (a, b) =>
+                a.layer - b.layer
+        );
+
+
+    for (
+        const plant of sortedPlants
+    ) {
+
+        const sheet =
+            images.plants[
+                plant.index
+            ];
+
+
+        if (!sheet)
+            continue;
+
+
+        const frameWidth =
+            sheet.width /
+            plant.columns;
+
+
+        const frameHeight =
+            sheet.height /
+            plant.rows;
+
+
+        const column =
+            plant.frame %
+            plant.columns;
+
+
+        const row =
+            Math.floor(
+                plant.frame /
+                plant.columns
+            );
+
+
+        const sourceX =
+            column *
+            frameWidth;
+
+
+        const sourceY =
+            row *
+            frameHeight;
+
+
+        ctx.drawImage(
+
+            sheet,
+
+            sourceX,
+
+            sourceY,
+
+            frameWidth,
+
+            frameHeight,
+
+            plant.x -
+                plant.w / 2,
+
+            plant.y -
+                plant.h,
+
+            plant.w,
+
+            plant.h
+
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   CLAMP HOOK
+   ============================================================ */
+
+function clampHook() {
+
+    state.hook.x =
+        Math.max(
+
+            80,
+
+            Math.min(
+
+                canvas.width - 60,
+
+                state.hook.x
+
+            )
+
+        );
+
+
+    state.hook.y =
+        Math.max(
+
+            110,
+
+            Math.min(
+
+                canvas.height - 40,
+
+                state.hook.y
+
+            )
+
+        );
+
+}
+
+
+/* ============================================================
+   IS PULLING?
+   ============================================================ */
+
+function isPulling() {
+
+    return (
+
+        keyState.has(
+            "ArrowUp"
+        ) &&
+
+        keyState.has(
+            " "
+        )
+
+    );
+
+}
+
+
+/* ============================================================
+   HOOK FISH
+   ============================================================ */
+
+function hookFish(f) {
+
+    if (
+        state.hookedFish
+    )
+        return;
+
+
+    if (
+        f.state !==
+        FISH_STATE.IDLE
+    )
+        return;
+
+
+    f.state =
+        FISH_STATE.HOOKED;
+
+
+    state.hookedFish =
+        f;
+
+
+    f.vx =
+        -Math.sign(
+            f.vx || 1
+        ) *
+        GAME_CONFIG.hookedFishSpeed;
+
+
+    f.hookOffsetX =
+        state.hook.x -
+        f.x;
+
+
+    f.hookOffsetY =
+        state.hook.y -
+        f.y;
+
+
+    f.escapeTimer =
+        GAME_CONFIG.fishEscapeTime;
+
+
+    f.spriteFrame = 0;
+
+    f.spriteTimer = 0;
+
+
+    f.dialogVisible = true;
+
+
+    state.message =
+        "Got one! Now PULL!";
+
+
+    state.messageTimer =
+        1.2;
+
+}
+
+
+/* ============================================================
+   RELEASE FISH
+   ============================================================ */
+
+function releaseFish(f) {
+
+    if (!f)
+        return;
+
+
+    f.state =
+        FISH_STATE.RELEASED;
+
+
+    f.releasedTimer = 0;
+
+
+    f.spriteFrame = 12;
+
+    f.spriteTimer = 0;
+
+
+    state.hookedFish = null;
+
+
+    f.vx =
+        -Math.sign(
+            f.vx || 1
+        ) *
+        rand(
+
+            GAME_CONFIG.fishSpeedMin,
+
+            GAME_CONFIG.fishSpeedMax
+
+        );
+
+
+    state.message =
+        "It escaped!";
+
+
+    state.messageTimer =
+        1.2;
+
+}
+
+
+/* ============================================================
+   START REELING
+   ============================================================ */
+
+function startReeling(f) {
+
+    if (!f)
+        return;
+
+
+    f.state =
+        FISH_STATE.REELING;
+
+
+    f.spriteFrame = 8;
+
+    f.spriteTimer = 0;
+
+
+    state.message =
+        "PULL!";
+
+
+    state.messageTimer =
+        0.4;
+
+}
+
+
+/* ============================================================
+   UPDATE FISH
+   ============================================================ */
+
+function updateFish(f, dt) {
+
+
+    /* ========================================================
+       IDLE
+       ======================================================== */
+
+    if (
+        f.state ===
+        FISH_STATE.IDLE
+    ) {
+
+        f.x +=
+            f.vx *
+            dt;
+
+
+        if (
+            f.x < 44 ||
+            f.x >
+            canvas.width - 44
+        ) {
+
+            f.vx *= -1;
+
+        }
+
+
+        /* ----------------------------------------------------
+           BLINK
+           ---------------------------------------------------- */
+
+        if (
+            f.fishType === 0 ||
+            f.fishType === 1
+        ) {
+
+            f.blinkTimer -= dt;
+
+
+            if (
+                f.blinkTimer <= 0
+            ) {
+
+                f.blinking =
+                    !f.blinking;
+
+
+                if (
+                    f.blinking
+                ) {
+
+                    f.blinkTimer =
+                        0.12;
+
+                }
+
+                else {
+
+                    f.blinkTimer =
+                        rand(2, 5);
+
+                }
+
+            }
+
+        }
+
+
+        updateFishAnimation(
+            f,
+            "idle",
+            dt
+        );
+
+
+        updateFishDialogue(
+            f,
+            dt
+        );
+
+
+        updateFishBubbles(
+            f,
+            dt
+        );
+
+
+        updateDialogBubbleAnimation(
+            f,
+            dt
+        );
+
+
+        /* ----------------------------------------------------
+           HOOK COLLISION
+           ---------------------------------------------------- */
+
+        const dx =
+            f.x -
+            state.hook.x;
+
+
+        const dy =
+            f.y -
+            state.hook.y;
+
+
+        if (
+            Math.hypot(dx, dy) <
+            state.hook.radius +
+            f.h * 0.35
+        ) {
+
+            hookFish(f);
+
+        }
+
     }
 
 
-    // ==========================================================
-    // REMOVE CAUGHT FISH
-    // ==========================================================
+    /* ========================================================
+       HOOKED
+       ======================================================== */
+
+    else if (
+        f.state ===
+        FISH_STATE.HOOKED
+    ) {
+
+        f.x +=
+            f.vx *
+            dt;
+
+
+        state.hook.x =
+            f.x +
+            f.hookOffsetX;
+
+
+        state.hook.y =
+            f.y +
+            f.hookOffsetY;
+
+
+        clampHook();
+
+
+        f.escapeTimer -= dt;
+
+
+        if (
+            f.escapeTimer <= 0
+        ) {
+
+            releaseFish(f);
+
+            return;
+
+        }
+
+
+        if (
+            isPulling()
+        ) {
+
+            startReeling(f);
+
+            return;
+
+        }
+
+
+        updateFishAnimation(
+            f,
+            "hooked",
+            dt
+        );
+
+
+        updateFishDialogue(
+            f,
+            dt
+        );
+
+
+        updateDialogBubbleAnimation(
+            f,
+            dt
+        );
+
+    }
+
+
+    /* ========================================================
+       REELING
+       ======================================================== */
+
+    else if (
+        f.state ===
+        FISH_STATE.REELING
+    ) {
+
+        if (
+            !isPulling()
+        ) {
+
+            f.state =
+                FISH_STATE.HOOKED;
+
+            return;
+
+        }
+
+
+        const dx =
+            GAME_CONFIG.boat.x -
+            f.x;
+
+
+        const dy =
+            GAME_CONFIG.boat.y -
+            f.y;
+
+
+        const distance =
+            Math.hypot(
+                dx,
+                dy
+            );
+
+
+        if (
+            distance > 0
+        ) {
+
+            const nx =
+                dx /
+                distance;
+
+
+            const ny =
+                dy /
+                distance;
+
+
+            f.x +=
+                nx *
+                GAME_CONFIG.reelSpeed *
+                dt;
+
+
+            f.y +=
+                ny *
+                GAME_CONFIG.reelSpeed *
+                dt;
+
+        }
+
+
+        state.hook.x =
+            f.x +
+            f.hookOffsetX;
+
+
+        state.hook.y =
+            f.y +
+            f.hookOffsetY;
+
+
+        updateFishAnimation(
+            f,
+            "reeling",
+            dt
+        );
+
+
+        if (
+            distance <=
+            GAME_CONFIG.boat.catchRadius
+        ) {
+
+            landFish(f);
+
+        }
+
+    }
+
+
+    /* ========================================================
+       RELEASED
+       ======================================================== */
+
+    else if (
+        f.state ===
+        FISH_STATE.RELEASED
+    ) {
+
+        f.releasedTimer += dt;
+
+
+        updateFishAnimation(
+            f,
+            "released",
+            dt
+        );
+
+
+        if (
+            f.releasedTimer >=
+            0.5
+        ) {
+
+            f.state =
+                FISH_STATE.IDLE;
+
+
+            f.dialogVisible =
+                false;
+
+
+            f.escapeTimer =
+                GAME_CONFIG.fishEscapeTime;
+
+
+            f.bubbleTimer =
+                rand(2, 6);
+
+        }
+
+    }
+
+}
+
+
+/* ============================================================
+   LAND FISH
+   ============================================================ */
+
+function landFish(f) {
+
+    if (
+        f.landed
+    )
+        return;
+
+
+    f.landed = true;
+
+
+    f.state =
+        FISH_STATE.LANDED;
+
+
+    state.hookedFish =
+        null;
+
+
+    state.score++;
+
+
+    spawnSparkles(
+        f.x,
+        f.y
+    );
+
+
+    state.message =
+        "Fish caught! ✨";
+
+
+    state.messageTimer =
+        1.2;
+
+
+    if (
+        state.score >=
+        GAME_CONFIG.goal
+    ) {
+
+        state.message =
+            "You got your new team member!";
+
+
+        state.messageTimer =
+            2;
+
+    }
+
+}
+
+
+/* ============================================================
+   UPDATE FISH ANIMATION
+   ============================================================ */
+
+function updateFishAnimation(
+    f,
+    animationName,
+    dt
+) {
+
+    if (
+        f.fishType < 2
+    )
+        return;
+
+
+    const animation =
+        GAME_CONFIG
+            .spriteAnimations[
+                animationName
+            ];
+
+
+    if (!animation)
+        return;
+
+
+    f.spriteTimer += dt;
+
+
+    const frameDuration =
+        1 /
+        (
+            f.fishType === 2
+                ? GAME_CONFIG.fish3FPS
+                : f.fishType === 3
+                    ? GAME_CONFIG.fish4FPS
+                    : GAME_CONFIG.fish5FPS
+        );
+
+
+    if (
+        f.spriteTimer >=
+        frameDuration
+    ) {
+
+        f.spriteTimer -=
+            frameDuration;
+
+
+        const relativeFrame =
+            f.spriteFrame -
+            animation.start;
+
+
+        let nextFrame =
+            relativeFrame + 1;
+
+
+        if (
+            nextFrame >=
+            animation.frames
+        ) {
+
+            nextFrame = 0;
+
+        }
+
+
+        f.spriteFrame =
+            animation.start +
+            nextFrame;
+
+    }
+
+}
+
+
+/* ============================================================
+   UPDATE DIALOGUE
+   ============================================================ */
+
+function updateFishDialogue(
+    f,
+    dt
+) {
+
+    if (!f.dialog)
+        return;
+
+
+    f.dialogTimer += dt;
+
+
+    if (
+        f.dialogTimer >=
+        f.dialogDelay
+    ) {
+
+        f.dialogVisible =
+            true;
+
+    }
+
+}
+
+
+/* ============================================================
+   UPDATE DIALOG BUBBLE ANIMATION
+   ============================================================ */
+
+function updateDialogBubbleAnimation(
+    f,
+    dt
+) {
+
+    if (
+        !f.dialogVisible
+    )
+        return;
+
+
+    if (
+        f.fishType < 2
+    )
+        return;
+
+
+    f.dialogFrameTimer += dt;
+
+
+    const frameDuration =
+        1 /
+        GAME_CONFIG.dialogBubble.fps;
+
+
+    if (
+        f.dialogFrameTimer >=
+        frameDuration
+    ) {
+
+        f.dialogFrameTimer -=
+            frameDuration;
+
+
+        f.dialogFrame++;
+
+
+        if (
+            f.dialogFrame >=
+            GAME_CONFIG.dialogBubble.frames
+        ) {
+
+            f.dialogFrame = 0;
+
+        }
+
+    }
+
+}
+
+
+/* ============================================================
+   UPDATE FISH BUBBLES
+   ============================================================ */
+
+function updateFishBubbles(
+    f,
+    dt
+) {
+
+    f.bubbleTimer -= dt;
+
+
+    if (
+        f.bubbleTimer <= 0
+    ) {
+
+        spawnBubble(f);
+
+
+        f.bubbleTimer =
+            rand(0.5, );
+
+    }
+
+}
+
+
+/* ============================================================
+   SPAWN SPARKLES
+   ============================================================ */
+
+function spawnSparkles(x, y) {
+
+    for (
+        let i = 0;
+        i < 18;
+        i++
+    ) {
+
+        const angle =
+            Math.PI *
+            2 *
+            i /
+            18;
+
+
+        const speed =
+            rand(30, 120);
+
+
+        state.sparkles.push({
+
+            x: x,
+
+            y: y,
+
+            vx:
+                Math.cos(angle) *
+                speed,
+
+            vy:
+                Math.sin(angle) *
+                speed,
+
+            life:
+                GAME_CONFIG.sparkleLife
+
+        });
+
+    }
+
+}
+
+
+/* ============================================================
+   SPAWN BUBBLE
+   ============================================================ */
+
+function spawnBubble(f) {
+
+    state.bubbles.push({
+
+        x:
+            f.x +
+            rand(-15, 15),
+
+        y:
+            f.y - 20,
+
+        radius:
+            rand(2, 5),
+
+        vx:
+            rand(-8, 8),
+
+        vy:
+            rand(-25, -45),
+
+        life: 1,
+
+        maxLife: 1
+
+    });
+
+}
+
+
+/* ============================================================
+   UPDATE BUBBLES
+   ============================================================ */
+
+function updateBubbles(dt) {
+
+    state.bubbles =
+        state.bubbles.filter(
+            b => {
+
+                b.life -= dt;
+
+
+                b.x +=
+                    b.vx *
+                    dt;
+
+
+                b.y +=
+                    b.vy *
+                    dt;
+
+
+                b.vx *=
+                    0.98;
+
+
+                return (
+                    b.life > 0
+                );
+
+            }
+        );
+
+}
+
+
+/* ============================================================
+   UPDATE GAME
+   ============================================================ */
+
+function update(dt) {
+
+    state.gameTime += dt;
+
+
+    state.environmentTime += dt;
+
+
+    updateFishSpawning();
+
+
+    updatePlants(dt);
+
+
+    for (
+        const f of state.fish
+    ) {
+
+        updateFish(
+            f,
+            dt
+        );
+
+    }
+
 
     state.fish =
-      state.fish.filter(
-        (f) => !f.caught
-      );
+        state.fish.filter(
+            f =>
+                f.state !==
+                FISH_STATE.LANDED
+        );
 
-
-    // ==========================================================
-    // UPDATE SPARKLES
-    // ==========================================================
 
     state.sparkles =
-      state.sparkles.filter((p) => {
+        state.sparkles.filter(
+            p => {
 
-        p.life -= dt;
-
-        p.x += p.vx * dt;
-
-        p.y += p.vy * dt;
-
-        p.vx *= 0.96;
-
-        p.vy *= 0.96;
-
-        return p.life > 0;
-      });
+                p.life -= dt;
 
 
-    // ==========================================================
-    // UPDATE BUBBLES
-    // ==========================================================
+                p.x +=
+                    p.vx *
+                    dt;
+
+
+                p.y +=
+                    p.vy *
+                    dt;
+
+
+                p.vx *=
+                    0.96;
+
+
+                p.vy *=
+                    0.96;
+
+
+                return (
+                    p.life > 0
+                );
+
+            }
+        );
+
 
     updateBubbles(dt);
 
 
-    // ==========================================================
-    // MESSAGE TIMER
-    // ==========================================================
+    if (
+        state.messageTimer > 0
+    ) {
 
-    if (state.messageTimer > 0) {
+        state.messageTimer -= dt;
 
-      state.messageTimer -= dt;
-    }
-  }
-
-
-  // ============================================================
-  // DRAW FISH
-  // ============================================================
-function drawFish(f) {
-
-  const facingRight = f.vx >= 0;
-
-  const targetW = 100;
-  const targetH = 100;
-
-  ctx.save();
-
-  ctx.translate(f.x, f.y);
-
-  ctx.scale(
-    facingRight ? 1 : -1,
-    1
-  );
-
-
-  // ==========================================
-  // FISH3 → SPRITE SHEET
-  // ==========================================
-
-  if (
-    f.fishType === 2 &&
-    images.fish3Sheet
-  ) {
-
-    const sheet = images.fish3Sheet;
-
-    const frameWidth =
-      sheet.width /
-      GAME_CONFIG.fish3Columns;
-
-    const frameHeight =
-      sheet.height /
-      GAME_CONFIG.fish3Rows;
-
-    const column =
-      f.spriteFrame %
-      GAME_CONFIG.fish3Columns;
-
-    const row =
-      Math.floor(
-        f.spriteFrame /
-        GAME_CONFIG.fish3Columns
-      );
-
-    const sourceX =
-      column * frameWidth;
-
-    const sourceY =
-      row * frameHeight;
-
-    ctx.drawImage(
-
-      sheet,
-
-      // Parte del sprite sheet que queremos
-      sourceX,
-      sourceY,
-      frameWidth,
-      frameHeight,
-
-      // Dónde lo dibujamos
-      -targetW / 2,
-      -targetH / 2,
-      targetW,
-      targetH
-    );
-
-  }
-
- // ==========================================
-  // FISH4 → SPRITE SHEET
-  // ==========================================
-
-  if (
-    f.fishType === 3 &&
-    images.fish4Sheet
-  ) {
-
-    const sheet = images.fish4Sheet;
-
-    const frameWidth =
-      sheet.width /
-      sheet.width /
-      GAME_CONFIG.fish4Columns;
-    const frameHeight =
-      sheet.height /
-      sheet.height /
-      GAME_CONFIG.fish4Rows;
-    const column =
-      f.spriteFrame %
-      f.spriteFrame %
-      GAME_CONFIG.fish4Columns;
-    const row =
-      Math.floor(
-        f.spriteFrame /
-        GAME_CONFIG.fish4Columns
-      );
-
-    const sourceX =
-      column * frameWidth;
-
-    const sourceY =
-      row * frameHeight;
-
-    ctx.drawImage(
-
-      sheet,
-
-      // Parte del sprite sheet que queremos
-      sourceX,
-      sourceY,
-      frameWidth,
-      frameHeight,
-
-      // Dónde lo dibujamos
-      -targetW / 2,
-      -targetH / 2,
-      targetW,
-      targetH
-    );
-
-  }
-  // ==========================================
-  // FISH1 + FISH2 → PNG NORMAL / BLINK
-  // ==========================================
-
-  else {
-
-    const fish =
-      images.fishes[f.fishType];
-
-    if (!fish) {
-      ctx.restore();
-      return;
     }
 
-    const sprite =
-      f.blinking && fish.blink
-        ? fish.blink
-        : fish.normal;
-
-    if (sprite) {
-
-      ctx.drawImage(
-        sprite,
-        -targetW / 2,
-        -targetH / 2,
-        targetW,
-        targetH
-      );
-    }
-  }
-
-  ctx.restore();
 }
 
 
-  // ============================================================
-  // DRAW BUBBLES
-  // ============================================================
+/* ============================================================
+   DRAW ENVIRONMENT
+   ============================================================
 
-  function drawBubbles() {
+   Este es el BACKGROUND REAL del juego.
 
-    for (const b of state.bubbles) {
+   NO utilizamos una imagen de fondo.
 
-      ctx.save();
+   ============================================================ */
+
+function drawEnvironment() {
+
+    const width =
+        canvas.width;
 
 
-      ctx.globalAlpha =
-        Math.max(
-          0,
-          b.life / b.maxLife
+    const height =
+        canvas.height;
+
+
+    const env =
+        GAME_CONFIG.environment;
+
+
+    /* ========================================================
+       SKY
+       ======================================================== */
+
+    const skyEnd =
+        height *
+        env.skyHeight;
+
+
+    const skyGradient =
+        ctx.createLinearGradient(
+
+            0,
+            0,
+
+            0,
+            skyEnd
+
         );
 
 
-      ctx.strokeStyle =
-        "#ffffff";
+    skyGradient.addColorStop(
+        0,
+        env.skyColorTop
+    );
 
 
-      ctx.lineWidth = 2;
+    skyGradient.addColorStop(
+        1,
+        env.skyColorBottom
+    );
 
 
-      ctx.beginPath();
+    ctx.fillStyle =
+        skyGradient;
 
 
-      ctx.arc(
+    ctx.fillRect(
 
-        b.x,
+        0,
+        0,
 
-        b.y,
+        width,
+        skyEnd
 
-        b.radius,
+    );
+
+
+    /* ========================================================
+       WATER
+       ======================================================== */
+
+    const waterStart =
+        height *
+        env.waterStart;
+
+
+    const waterEnd =
+        height *
+        env.waterEnd;
+
+
+    const waterGradient =
+        ctx.createLinearGradient(
+
+            0,
+            waterStart,
+
+            0,
+            waterEnd
+
+        );
+
+
+    waterGradient.addColorStop(
+        0,
+        env.waterTopColor
+    );
+
+
+    waterGradient.addColorStop(
+        1,
+        env.waterBottomColor
+    );
+
+
+    ctx.fillStyle =
+        waterGradient;
+
+
+    ctx.fillRect(
 
         0,
 
-        Math.PI * 2
-      );
+        waterStart,
+
+        width,
+
+        waterEnd -
+        waterStart
+
+    );
 
 
-      ctx.stroke();
+    /* ========================================================
+       SAND
+       ======================================================== */
+
+    const sandStart =
+        height *
+        env.sandStart;
 
 
-      ctx.restore();
-    }
+    const sandGradient =
+        ctx.createLinearGradient(
+
+            0,
+            sandStart,
+
+            0,
+            height
+
+        );
+
+
+    sandGradient.addColorStop(
+        0,
+        env.sandColorTop
+    );
+
+
+    sandGradient.addColorStop(
+        1,
+        env.sandColorBottom
+    );
+
+
+    ctx.fillStyle =
+        sandGradient;
+
+
+    ctx.fillRect(
+
+        0,
+
+        sandStart,
+
+        width,
+
+        height -
+        sandStart
+
+    );
+
+
+    /* ========================================================
+       HORIZON / TRANSITION
+
+       Suavizamos visualmente la separación entre cielo
+       y agua.
+
+       ======================================================== */
+
+    ctx.save();
+
+
+    const horizonGradient =
+        ctx.createLinearGradient(
+
+            0,
+
+            waterStart - 30,
+
+            0,
+
+            waterStart + 30
+
+        );
+
+
+    horizonGradient.addColorStop(
+        0,
+        "rgba(255,190,190,0)"
+    );
+
+
+    horizonGradient.addColorStop(
+        0.5,
+        "rgba(255,190,190,0.35)"
+    );
+
+
+    horizonGradient.addColorStop(
+        1,
+        "rgba(255,190,190,0)"
+    );
+
+
+    ctx.fillStyle =
+        horizonGradient;
+
+
+    ctx.fillRect(
+
+        0,
+
+        waterStart - 30,
+
+        width,
+
+        60
+
+    );
+
+
+    ctx.restore();
+
+}
+
+
+/* ============================================================
+   DRAW SEA
+   ============================================================
+
+   IMPORTANTE:
+
+   El sea se dibuja DESPUÉS del environment.
+
+   Pero ANTES de:
+
+      BOAT
+      PLANTS
+      FISH
+
+   Por tanto la transparencia del sea NO afecta a los peces.
+
+   ============================================================ */
+
+function drawSea() {
+
+    if (
+        !images.sea
+    )
+        return;
+
+
+    const seaConfig =
+        GAME_CONFIG.sea;
+
+
+    /* ========================================================
+       MOVIMIENTO DE LAS OLAS
+       ======================================================== */
+
+    const t =
+        state.environmentTime *
+        seaConfig.movementSpeed;
+
+
+    const offsetX =
+        Math.sin(t) *
+        seaConfig.moveX;
+
+
+    const offsetY =
+        Math.cos(t * 0.8) *
+        seaConfig.moveY;
+
+
+    const drawW =
+        seaConfig.w ||
+        canvas.width;
+
+
+    const drawH =
+        seaConfig.h ||
+        canvas.height;
+
+
+    /* ========================================================
+       LIGHT / SHADOW EFFECT
+
+       La sombra se genera alrededor de la propia imagen
+       de las olas.
+
+       ======================================================== */
+
+    ctx.save();
+
+
+    ctx.globalAlpha =
+        seaConfig.alpha;
+
+
+    ctx.shadowColor =
+        "rgba(255,255,255,0.42)";
+
+
+    ctx.shadowBlur =
+        seaConfig.shadowBlur;
+
+
+    ctx.shadowOffsetX =
+        0;
+
+
+    ctx.shadowOffsetY =
+        seaConfig.shadowOffsetY;
+
+
+    ctx.drawImage(
+
+        images.sea,
+
+        offsetX,
+
+        offsetY,
+
+        drawW,
+
+        drawH
+
+    );
+
+
+    ctx.restore();
+
+
+    /* ========================================================
+       SEGUNDA PASADA MUY SUAVE
+
+       Refuerza ligeramente las ondas sin aumentar
+       demasiado la opacidad.
+
+       ======================================================== */
+
+    ctx.save();
+
+
+    ctx.globalAlpha =
+        seaConfig.alpha *
+        0.1;
+
+
+    ctx.drawImage(
+
+        images.sea,
+
+        -offsetX * 0.5,
+
+        -offsetY * 0.5,
+
+        drawW,
+
+        drawH
+
+    );
+
+
+    ctx.restore();
 
 
     ctx.globalAlpha = 1;
-  }
 
+}
 
-  // ============================================================
-  // DRAW SCENE
-  // ============================================================
 
-  function drawScene() {
+/* ============================================================
+   DRAW BOAT
+   ============================================================ */
 
-    ctx.clearRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+function drawBoat() {
 
-
-    // ==========================================================
-    // PLANTS
-    // ==========================================================
-
-    if (images.plants) {
-
-      ctx.drawImage(
-
-        images.plants,
-
-        0,
-
-        canvas.height - 180,
-
-        canvas.width,
-
-        180
-      );
-
-    } else {
-
-      ctx.fillStyle =
-        "rgba(8,112,68,.45)";
-
-
-      for (
-        let x = 20;
-        x < canvas.width;
-        x += 68
-      ) {
-
-        ctx.fillRect(
-
-          x,
-
-          canvas.height -
-          92 -
-          ((x / 19) % 22),
-
-          8,
-
-          86
-        );
-      }
-    }
-
-
-    // ==========================================================
-    // FISH
-    // ==========================================================
-
-    state.fish.forEach(drawFish);
-
-
-    // ==========================================================
-    // BUBBLES
-    // ==========================================================
-
-    drawBubbles();
-
-
-    // ==========================================================
-    // ROD
-    // ==========================================================
-
-    if (images.rod) {
-
-      ctx.drawImage(
-
-        images.rod,
-
-        170,
-
-        275,
-
-        190,
-
-        125
-      );
-
-    } else {
-
-      ctx.strokeStyle =
-        "#8b5e34";
-
-      ctx.lineWidth = 8;
-
-      ctx.beginPath();
-
-      ctx.moveTo(
-        190,
-        300
-      );
-
-      ctx.quadraticCurveTo(
-        285,
-        285,
-        335,
-        315
-      );
-
-      ctx.stroke();
-    }
-
-
-    // ==========================================================
-    // LINE
-    // ==========================================================
-
-    ctx.strokeStyle =
-      "#eaf5ff";
-
-    ctx.lineWidth = 2;
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      335,
-      315
-    );
-
-    ctx.lineTo(
-      state.hook.x,
-      state.hook.y
-    );
-
-    ctx.stroke();
-
-
-    // ==========================================================
-    // HOOK
-    // ==========================================================
-
-    if (images.hook) {
-
-      ctx.drawImage(
-
-        images.hook,
-
-        state.hook.x - 18,
-
-        state.hook.y - 18,
-
-        36,
-
-        36
-      );
-
-    } else {
-
-      ctx.strokeStyle =
-        "#d6eef9";
-
-      ctx.lineWidth = 3;
-
-      ctx.beginPath();
-
-      ctx.arc(
-
-        state.hook.x,
-
-        state.hook.y,
-
-        14,
-
-        -0.4,
-
-        Math.PI * 1.3
-      );
-
-      ctx.stroke();
-    }
-
-
-    // ==========================================================
-    // SPARKLES
-    // ==========================================================
-
-    for (
-      const p of state.sparkles
+    if (
+        images.boat
     ) {
 
-      ctx.globalAlpha =
-        Math.max(
-          0,
-          p.life /
-          GAME_CONFIG.sparkleLife
+        const boatConfig =
+            GAME_CONFIG.boatAnimation;
+
+
+        const t =
+            state.environmentTime;
+
+
+        /* ====================================================
+           OSCILLATION
+           ==================================================== */
+
+        const rotation =
+            Math.sin(
+                t *
+                boatConfig.rotationSpeed
+            ) *
+            boatConfig.rotationAmount;
+
+
+        const bob =
+            Math.sin(
+                t *
+                boatConfig.bobSpeed
+            ) *
+            boatConfig.bobAmount;
+
+
+        ctx.save();
+
+
+        ctx.translate(
+
+            GAME_CONFIG.boat.x,
+
+            GAME_CONFIG.boat.y +
+            bob
+
         );
 
 
-      ctx.fillStyle =
-       "#fff7a8";
+        ctx.rotate(
+            rotation
+        );
 
 
-      ctx.fillRect(
+        ctx.drawImage(
 
-        p.x - 2,
+            images.boat,
 
-        p.y - 2,
+            -GAME_CONFIG.boat.w / 2,
 
-        4,
+            -GAME_CONFIG.boat.h / 2,
 
-        4
-      );
+            GAME_CONFIG.boat.w,
+
+            GAME_CONFIG.boat.h
+
+        );
+
+
+        ctx.restore();
+
+    }
+
+    else {
+
+        /* ----------------------------------------------------
+           PLACEHOLDER
+           ---------------------------------------------------- */
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            "rgba(255,255,255,0.18)";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            GAME_CONFIG.boat.x,
+
+            GAME_CONFIG.boat.y,
+
+            GAME_CONFIG.boat.catchRadius,
+
+            0,
+
+            Math.PI * 2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.restore();
+
+    }
+
+}
+
+
+/* ============================================================
+   GET FISH SHEET
+   ============================================================ */
+
+function getFishSheet(type) {
+
+    if (
+        type === 2
+    )
+        return images.fish3Sheet;
+
+
+    if (
+        type === 3
+    )
+        return images.fish4Sheet;
+
+
+    if (
+        type === 4
+    )
+        return images.fish5Sheet;
+
+
+    return null;
+
+}
+
+
+/* ============================================================
+   DRAW FISH
+   ============================================================ */
+
+function drawFish(f) {
+
+    const facingRight =
+        f.vx >= 0;
+
+
+    const targetW =
+        120;
+
+
+    const targetH =
+        120;
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        f.x,
+        f.y
+    );
+
+
+    ctx.scale(
+
+        facingRight
+            ? 1
+            : -1,
+
+        1
+
+    );
+
+
+    /* ========================================================
+       FISH 3-5
+       ======================================================== */
+
+    if (
+        f.fishType >= 2
+    ) {
+
+        const sheet =
+            getFishSheet(
+                f.fishType
+            );
+
+
+        if (sheet) {
+
+            drawFishSpriteSheet(
+
+                sheet,
+
+                f.spriteFrame,
+
+                4,
+
+                4,
+
+                targetW,
+
+                targetH
+
+            );
+
+        }
+
     }
 
 
-    ctx.globalAlpha = 1;
+    /* ========================================================
+       FISH 1 + FISH 2
+       ======================================================== */
+
+    else {
+
+        const fish =
+            images.fishes[
+                f.fishType
+            ];
 
 
-    // ==========================================================
-    // SCORE
-    // ==========================================================
+        if (fish) {
 
-    //ctx.fillStyle =
-    //  "#083450";
+            const sprite =
+                f.blinking &&
+                fish.blink
 
-   ctx.font = "700 28px Arial, Helvetica";
+                    ? fish.blink
+
+                    : fish.normal;
+
+
+            if (sprite) {
+
+                ctx.drawImage(
+
+                    sprite,
+
+                    -targetW / 2,
+
+                    -targetH / 2,
+
+                    targetW,
+
+                    targetH
+
+                );
+
+            }
+
+        }
+
+    }
+
+
+    ctx.restore();
+
+
+    /* ========================================================
+       DIALOGUE
+       ======================================================== */
+
+    if (
+        f.dialogVisible &&
+        f.dialog
+    ) {
+
+        drawFishDialogue(f);
+
+    }
+
+}
+
+
+/* ============================================================
+   DRAW FISH SPRITE SHEET
+   ============================================================ */
+
+function drawFishSpriteSheet(
+
+    sheet,
+
+    frame,
+
+    rows,
+
+    columns,
+
+    targetW,
+
+    targetH
+
+) {
+
+    const frameWidth =
+        sheet.width /
+        columns;
+
+
+    const frameHeight =
+        sheet.height /
+        rows;
+
+
+    const column =
+        frame %
+        columns;
+
+
+    const row =
+        Math.floor(
+            frame /
+            columns
+        );
+
+
+    const sourceX =
+        column *
+        frameWidth;
+
+
+    const sourceY =
+        row *
+        frameHeight;
+
+
+    ctx.drawImage(
+
+        sheet,
+
+        sourceX,
+
+        sourceY,
+
+        frameWidth,
+
+        frameHeight,
+
+        -targetW / 2,
+
+        -targetH / 2,
+
+        targetW,
+
+        targetH
+
+    );
+
+}
+
+
+/* ============================================================
+   GET DIALOGUE BUBBLE
+   ============================================================ */
+
+function getDialogBubble(fishType) {
+
+    if (
+        fishType === 2
+    )
+        return images.fish3DialogBubble;
+
+
+    if (
+        fishType === 3
+    )
+        return images.fish4DialogBubble;
+
+
+    if (
+        fishType === 4
+    )
+        return images.fish5DialogBubble;
+
+
+    return null;
+
+}
+
+
+/* ============================================================
+   DRAW DIALOGUE BUBBLE
+   ============================================================
+
+   SPRITE SHEET:
+
+       0 | 1
+       -----
+       2 | 3
+
+   ============================================================ */
+
+function drawFishDialogue(f) {
+
+    if (
+        !f.dialogVisible ||
+        !f.dialog
+    )
+        return;
+
+
+    const padding =
+        10;
+
+
+    const maxWidth =
+        180;
+
+
+    ctx.save();
+
+
+    ctx.font =
+        "700 15px Arial";
+
+
+    const measuredTextWidth =
+        ctx.measureText(
+            f.dialog
+        ).width;
+
+
+    const bubbleWidth =
+        Math.min(
+
+            measuredTextWidth +
+            padding * 2,
+
+            maxWidth
+
+        );
+
+
+    const bubbleHeight =
+        42;
+
+
+    const bubbleX =
+        f.x -
+        bubbleWidth / 2;
+
+
+    const bubbleY =
+        f.y -
+        85;
+
+
+    /* ========================================================
+       GET IMAGE
+       ======================================================== */
+
+    const bubbleImage =
+        getDialogBubble(
+            f.fishType
+        );
+
+
+    const useImageBubble =
+        bubbleImage &&
+        bubbleImage.complete &&
+        bubbleImage.naturalWidth > 0;
+
+
+    /* ========================================================
+       IMAGE BUBBLE
+       ======================================================== */
+
+    if (
+        useImageBubble
+    ) {
+
+        const rows =
+            GAME_CONFIG.dialogBubble.rows;
+
+
+        const columns =
+            GAME_CONFIG.dialogBubble.columns;
+
+
+        const frameWidth =
+            bubbleImage.width /
+            columns;
+
+
+        const frameHeight =
+            bubbleImage.height /
+            rows;
+
+
+        const frame =
+            f.dialogFrame %
+            4;
+
+
+        const column =
+            frame %
+            columns;
+
+
+        const row =
+            Math.floor(
+                frame /
+                columns
+            );
+
+
+        const sourceX =
+            column *
+            frameWidth;
+
+
+        const sourceY =
+            row *
+            frameHeight;
+
+
+        ctx.drawImage(
+
+            bubbleImage,
+
+            sourceX,
+
+            sourceY,
+
+            frameWidth,
+
+            frameHeight,
+
+            bubbleX,
+
+            bubbleY,
+
+            bubbleWidth,
+
+            bubbleHeight
+
+        );
+
+    }
+
+
+    /* ========================================================
+       FALLBACK CANVAS BUBBLE
+       ======================================================== */
+
+    else {
+
+        ctx.fillStyle =
+            "#ffffff";
+
+
+        ctx.strokeStyle =
+            "#222222";
+
+
+        ctx.lineWidth =
+            2;
+
+
+        ctx.beginPath();
+
+
+        ctx.roundRect(
+
+            bubbleX,
+
+            bubbleY,
+
+            bubbleWidth,
+
+            bubbleHeight,
+
+            10
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.stroke();
+
+
+        /* ----------------------------------------------------
+           TAIL
+           ---------------------------------------------------- */
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+
+            f.x - 8,
+
+            bubbleY +
+            bubbleHeight
+
+        );
+
+
+        ctx.lineTo(
+
+            f.x,
+
+            bubbleY +
+            bubbleHeight +
+            10
+
+        );
+
+
+        ctx.lineTo(
+
+            f.x + 8,
+
+            bubbleY +
+            bubbleHeight
+
+        );
+
+
+        ctx.closePath();
+
+
+        ctx.fill();
+
+
+        ctx.stroke();
+
+    }
+
+
+    /* ========================================================
+       TEXT
+
+       El texto continúa siendo Canvas.
+
+       ======================================================== */
+
+    ctx.fillStyle =
+        "#222222";
+
+
+    ctx.textAlign =
+        "center";
+
+
+    ctx.textBaseline =
+        "middle";
 
 
     ctx.fillText(
 
-      `Peces: ${state.score}/${GAME_CONFIG.goal}`,
+        f.dialog,
 
-      20,
+        f.x,
 
-      40
+        bubbleY +
+        bubbleHeight / 2
+
     );
 
 
-    // ==========================================================
-    // MESSAGE
-    // ==========================================================
+    ctx.restore();
 
-    if (
-      state.messageTimer > 0
+}
+
+
+/* ============================================================
+   DRAW BUBBLES
+   ============================================================ */
+
+function drawBubbles() {
+
+    for (
+        const b of state.bubbles
     ) {
 
-      ctx.fillStyle =
-        "#ffffff";
-
-      ctx.strokeStyle =
-        "rgba(0, 0, 0, .26)";
-
-      ctx.lineWidth = 4;
-
-    ctx.font = "800 42px Arial, Helvetica, sans-serif";
+        ctx.save();
 
 
-      const textW =
-        ctx.measureText(
-          state.message
-        ).width;
+        ctx.globalAlpha =
+            Math.max(
+
+                0,
+
+                b.life /
+                b.maxLife
+
+            );
 
 
-      const textX =
-        (
-          canvas.width -
-          textW
-        ) * 0.5;
+        ctx.strokeStyle =
+            "#ffffff";
 
 
-      const textY = 90;
+        ctx.lineWidth =
+            2;
 
 
-      ctx.strokeText(
-
-        state.message,
-
-        textX,
-
-        textY
-      );
+        ctx.beginPath();
 
 
-      ctx.fillText(
+        ctx.arc(
 
-        state.message,
+            b.x,
 
-        textX,
+            b.y,
 
-        textY
-      );
+            b.radius,
+
+            0,
+
+            Math.PI * 2
+
+        );
+
+
+        ctx.stroke();
+
+
+        ctx.restore();
+
     }
-  }
 
 
-  // ============================================================
-  // KEYBOARD INPUT
-  // ============================================================
+    ctx.globalAlpha = 1;
 
-  const keyState =
+}
+
+
+/* ============================================================
+   DRAW ROD
+   ============================================================ */
+
+function drawRod() {
+
+    /* ========================================================
+       PNG ROD
+
+       Cuando quieras utilizarlo:
+
+       ASSET_PATHS.rod = "rod.png";
+
+       ======================================================== */
+
+    if (
+        images.rod
+    ) {
+
+        ctx.drawImage(
+
+            images.rod,
+
+            40,
+            20,
+
+            260,
+            170
+
+        );
+
+    }
+
+    else {
+
+        /* ====================================================
+           ROD CREADO CON CANVAS
+           ==================================================== */
+
+        ctx.save();
+
+
+        ctx.strokeStyle =
+            "#8b5e34";
+
+
+        ctx.lineWidth =
+            8;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            70,
+            40
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            210,
+            30,
+
+            280,
+            150
+
+        );
+
+
+        ctx.stroke();
+
+
+        ctx.restore();
+
+    }
+
+}
+
+
+/* ============================================================
+   DRAW HOOK
+   ============================================================ */
+
+function drawHook() {
+
+    /* ========================================================
+       LINE
+       ======================================================== */
+
+    ctx.strokeStyle =
+        "#eaf5ff";
+
+
+    ctx.lineWidth =
+        2;
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+
+        280,
+
+        150
+
+    );
+
+
+    ctx.lineTo(
+
+        state.hook.x,
+
+        state.hook.y
+
+    );
+
+
+    ctx.stroke();
+
+
+    /* ========================================================
+       HOOK IMAGE
+       ======================================================== */
+
+    if (
+        images.hook
+    ) {
+
+        ctx.drawImage(
+
+            images.hook,
+
+            state.hook.x - 18,
+
+            state.hook.y - 18,
+
+            36,
+
+            36
+
+        );
+
+    }
+
+    else {
+
+        /* ====================================================
+           CANVAS HOOK
+           ==================================================== */
+
+        ctx.strokeStyle =
+            "#d6eef9";
+
+
+        ctx.lineWidth =
+            3;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            state.hook.x,
+
+            state.hook.y,
+
+            14,
+
+            -0.4,
+
+            Math.PI * 1.3
+
+        );
+
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* ============================================================
+   DRAW SPARKLES
+   ============================================================ */
+
+function drawSparkles() {
+
+    for (
+        const p of state.sparkles
+    ) {
+
+        ctx.globalAlpha =
+            Math.max(
+
+                0,
+
+                p.life /
+                GAME_CONFIG.sparkleLife
+
+            );
+
+
+        ctx.fillStyle =
+            "#fff7a8";
+
+
+        ctx.fillRect(
+
+            p.x - 2,
+
+            p.y - 2,
+
+            4,
+
+            4
+
+        );
+
+    }
+
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* ============================================================
+   DRAW UI
+   ============================================================ */
+
+function drawUI() {
+
+    /* ========================================================
+       SCORE
+       ======================================================== */
+
+    ctx.fillStyle =
+        "#000000";
+
+
+    ctx.font =
+        "700 28px Arial, Helvetica, sans-serif";
+
+
+    ctx.fillText(
+
+        `Peces: ${state.score}/${GAME_CONFIG.goal}`,
+
+        20,
+
+        40
+
+    );
+
+
+    /* ========================================================
+       MESSAGE
+       ======================================================== */
+
+    if (
+        state.messageTimer > 0
+    ) {
+
+        ctx.fillStyle =
+            "#ffffff";
+
+
+        ctx.strokeStyle =
+            "rgba(0,0,0,.26)";
+
+
+        ctx.lineWidth =
+            4;
+
+
+        ctx.font =
+            "800 42px Arial, Helvetica, sans-serif";
+
+
+        const textW =
+            ctx.measureText(
+                state.message
+            ).width;
+
+
+        const textX =
+            (
+                canvas.width -
+                textW
+            ) *
+            0.5;
+
+
+        const textY =
+            90;
+
+
+        ctx.strokeText(
+
+            state.message,
+
+            textX,
+
+            textY
+
+        );
+
+
+        ctx.fillText(
+
+            state.message,
+
+            textX,
+
+            textY
+
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   DRAW SCENE
+   ============================================================
+
+   ORDEN DE CAPAS
+
+   ------------------------------------------------------------
+
+   1  ENVIRONMENT
+      cielo
+      rosa
+      agua
+      arena
+
+   2  SEA
+      ondas + transparencia + luz
+
+   3  BOAT
+      barca animada
+
+   4  PLANTS
+      plantas
+
+   5  FISH
+      peces
+
+   6  BUBBLES
+      burbujas físicas
+
+   7  ROD
+      caña
+
+   8  LINE + HOOK
+
+   9  SPARKLES
+
+   10 UI
+
+   ============================================================ */
+
+function drawScene() {
+
+    ctx.clearRect(
+
+        0,
+
+        0,
+
+        canvas.width,
+
+        canvas.height
+
+    );
+
+
+    /* ========================================================
+       1. ENVIRONMENT
+       ======================================================== */
+
+    drawEnvironment();
+
+
+    /* ========================================================
+       2. SEA
+       ======================================================== */
+
+    drawSea();
+
+
+    /* ========================================================
+       3. BOAT
+       ======================================================== */
+
+    drawBoat();
+
+
+    /* ========================================================
+       4. PLANTS
+       ======================================================== */
+
+    drawPlants();
+
+
+    /* ========================================================
+       5. FISH
+       ======================================================== */
+
+    state.fish.forEach(
+        drawFish
+    );
+
+
+    /* ========================================================
+       6. BUBBLES
+       ======================================================== */
+
+    drawBubbles();
+
+
+    /* ========================================================
+       7. ROD
+       ======================================================== */
+
+    drawRod();
+
+
+    /* ========================================================
+       8. HOOK + LINE
+       ======================================================== */
+
+    drawHook();
+
+
+    /* ========================================================
+       9. SPARKLES
+       ======================================================== */
+
+    drawSparkles();
+
+
+    /* ========================================================
+       10. UI
+       ======================================================== */
+
+    drawUI();
+
+}
+
+
+/* ============================================================
+   KEYBOARD INPUT
+   ============================================================ */
+
+const keyState =
     new Set();
 
 
-  window.addEventListener(
+window.addEventListener(
+
     "keydown",
-    (e) => {
 
-      keyState.add(
-        e.key
-      );
+    e => {
+
+        keyState.add(
+            e.key
+        );
+
     }
-  );
+
+);
 
 
-  window.addEventListener(
+window.addEventListener(
+
     "keyup",
-    (e) => {
 
-      keyState.delete(
-        e.key
-      );
+    e => {
+
+        keyState.delete(
+            e.key
+        );
+
     }
-  );
+
+);
 
 
-  // ============================================================
-  // UPDATE INPUT
-  // ============================================================
+/* ============================================================
+   UPDATE INPUT
+   ============================================================ */
 
-  function updateInput(dt) {
-
-    const speed = 280;
-
+function updateInput(dt) {
 
     if (
-      keyState.has("ArrowLeft") ||
-      keyState.has("a") ||
-      keyState.has("A")
+        state.hookedFish
     ) {
 
-      state.hook.x -=
-        speed * dt;
+        return;
+
     }
 
 
+    const speed =
+        280;
+
+
+    /* ========================================================
+       LEFT
+       ======================================================== */
+
     if (
-      keyState.has("ArrowRight") ||
-      keyState.has("d") ||
-      keyState.has("D")
+
+        keyState.has(
+            "ArrowLeft"
+        ) ||
+
+        keyState.has(
+            "a"
+        ) ||
+
+        keyState.has(
+            "A"
+        )
+
     ) {
 
-      state.hook.x +=
-        speed * dt;
+        state.hook.x -=
+            speed *
+            dt;
+
     }
 
 
+    /* ========================================================
+       RIGHT
+       ======================================================== */
+
     if (
-      keyState.has("ArrowUp") ||
-      keyState.has("w") ||
-      keyState.has("W")
+
+        keyState.has(
+            "ArrowRight"
+        ) ||
+
+        keyState.has(
+            "d"
+        ) ||
+
+        keyState.has(
+            "D"
+        )
+
     ) {
 
-      state.hook.y -=
-        speed * dt;
+        state.hook.x +=
+            speed *
+            dt;
+
     }
 
 
+    /* ========================================================
+       UP
+       ======================================================== */
+
     if (
-      keyState.has("ArrowDown") ||
-      keyState.has("s") ||
-      keyState.has("S")
+
+        keyState.has(
+            "ArrowUp"
+        ) ||
+
+        keyState.has(
+            "w"
+        ) ||
+
+        keyState.has(
+            "W"
+        )
+
     ) {
 
-      state.hook.y +=
-        speed * dt;
+        state.hook.y -=
+            speed *
+            dt;
+
+    }
+
+
+    /* ========================================================
+       DOWN
+       ======================================================== */
+
+    if (
+
+        keyState.has(
+            "ArrowDown"
+        ) ||
+
+        keyState.has(
+            "s"
+        ) ||
+
+        keyState.has(
+            "S"
+        )
+
+    ) {
+
+        state.hook.y +=
+            speed *
+            dt;
+
     }
 
 
     clampHook();
-  }
+
+}
 
 
-  // ============================================================
-  // POINTER → HOOK
-  // ============================================================
+/* ============================================================
+   POINTER → HOOK
+   ============================================================ */
 
-  function pointerToHook(evt) {
+function pointerToHook(evt) {
+
+    if (
+        state.hookedFish
+    )
+        return;
+
 
     const rect =
-      canvas.getBoundingClientRect();
+        canvas.getBoundingClientRect();
 
 
     const x =
-      (
-        (evt.clientX - rect.left) /
-        rect.width
-      ) *
-      canvas.width;
+        (
+
+            (
+                evt.clientX -
+                rect.left
+            ) /
+
+            rect.width
+
+        ) *
+
+        canvas.width;
 
 
     const y =
-      (
-        (evt.clientY - rect.top) /
-        rect.height
-      ) *
-      canvas.height;
+        (
+
+            (
+                evt.clientY -
+                rect.top
+            ) /
+
+            rect.height
+
+        ) *
+
+        canvas.height;
 
 
-    state.hook.x = x;
+    state.hook.x =
+        x;
 
-    state.hook.y = y;
+
+    state.hook.y =
+        y;
 
 
     clampHook();
-  }
+
+}
 
 
-  canvas.addEventListener(
+/* ============================================================
+   POINTER EVENTS
+   ============================================================ */
+
+canvas.addEventListener(
+
     "pointerdown",
+
     pointerToHook
-  );
+
+);
 
 
-  canvas.addEventListener(
+canvas.addEventListener(
+
     "pointermove",
-    (e) => {
 
-      if (e.buttons) {
+    e => {
 
-        pointerToHook(e);
-      }
+        if (
+            e.buttons
+        ) {
+
+            pointerToHook(e);
+
+        }
+
     }
-  );
+
+);
 
 
-  // ============================================================
-  // GAME LOOP
-  // ============================================================
+/* ============================================================
+   GAME LOOP
+   ============================================================ */
 
-  let last = 0;
+let last = 0;
 
 
-  function loop(ts) {
+function loop(ts) {
 
     const dt =
-      Math.min(
-        0.033,
-        (ts - last) / 1000 ||
-        0.016
-      );
+        Math.min(
+
+            0.033,
+
+            (
+                ts -
+                last
+            ) /
+            1000
+
+            || 0.016
+
+        );
 
 
-    last = ts;
+    last =
+        ts;
 
 
     updateInput(dt);
 
+
     update(dt);
+
 
     drawScene();
 
 
     requestAnimationFrame(
-      loop
-    );
-  }
-
-
-  // ============================================================
-  // START GAME
-  // ============================================================
-
-  loadAssets().then(() => {
-
-    resetFish();
-
-    requestAnimationFrame(
-      loop
+        loop
     );
 
-  });
+}
+
+
+/* ============================================================
+   START GAME
+   ============================================================ */
+
+loadAssets()
+
+    .then(() => {
+
+
+        /* ----------------------------------------------------
+           FISH
+           ---------------------------------------------------- */
+
+        resetFish();
+
+
+        /* ----------------------------------------------------
+           PLANTS
+           ---------------------------------------------------- */
+
+        createPlants();
+
+
+        /* ----------------------------------------------------
+           START
+           ---------------------------------------------------- */
+
+        requestAnimationFrame(
+            loop
+        );
+
+    });
 
 </script>
+
+
+</body>
+
+</html>
