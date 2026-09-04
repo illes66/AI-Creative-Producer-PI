@@ -53,42 +53,50 @@
   // ============================================================
   // ASSETS
   // ============================================================
+const ASSET_PATHS = {
 
-  const ASSET_PATHS = {
-    //rod: "rod.png",
-    //hook: "hook.png",
-   // plants: "plants.png",
+  // Cada pez tiene dos imágenes:
+  // normal = ojos abiertos
+  // blink  = ojos cerrados
 
-    // Cada pez tiene su sprite normal y su sprite de blink
-    fishes: [
-      {
-        normal: "fish1.png",
-        blink: "fish1_blink.png"
-      },
-      {
-        normal: "fish2.png",
-        blink: "fish2_blink.png"
-      }
-    ]
-  };
+  fishes: [
+    {
+      normal: "fish1.png",
+      blink: "fish1_blink.png"
+    },
+    {
+      normal: "fish2.png",
+      blink: "fish2_blink.png"
+    }
+  ],
 
+  // Fish3 será un sprite sheet
+  fish3Sheet: "fish3-sheet.png",
+    fish4Sheet: "fish4-sheet.png"
+
+};
 
   // ============================================================
   // GAME CONFIG
   // ============================================================
 
-  const GAME_CONFIG = {
-    fishCount: 12,
+const GAME_CONFIG = {
 
-    fishSpeedMin: 45,
-    fishSpeedMax: 110,
+  fishCount: 12,
 
-    // Hay que pescar los 12
-    goal: 12,
+  fishSpeedMin: 45,
+  fishSpeedMax: 110,
 
-    sparkleLife: 0.5
-  };
+  goal: 12,
 
+  sparkleLife: 0.5,
+
+  // Fish3
+  fish3FrameCount: 18,
+  fish3FPS: 8,
+  fish3Rows: 4,
+  fish3Columns: 4
+};
 
   // ============================================================
   // CANVAS
@@ -162,42 +170,82 @@
   // LOAD ASSETS
   // ============================================================
 
-  async function loadAssets() {
+async function loadAssets() {
 
-    // Rod, hook and plants
-    const [rod, hook, plants] = await Promise.all([
-      loadImage(ASSET_PATHS.rod),
-      loadImage(ASSET_PATHS.hook),
-      loadImage(ASSET_PATHS.plants)
-    ]);
+  // ==========================================
+  // CARGAR FISH1 Y FISH2
+  // Cada uno tiene normal + blink
+  // ==========================================
 
-    images.rod = rod.ok ? rod.img : null;
-    images.hook = hook.ok ? hook.img : null;
-    images.plants = plants.ok ? plants.img : null;
+  const fishPromises = ASSET_PATHS.fishes.flatMap((fish) => [
+    loadImage(fish.normal),
+    loadImage(fish.blink)
+  ]);
 
+  // ==========================================
+  // CARGAR FISH3 SPRITE SHEET
+  // ==========================================
 
-    // ----------------------------------------------------------
-    // LOAD FISHES
-    // ----------------------------------------------------------
+  const fish3Promise = loadImage(
+    ASSET_PATHS.fish3Sheet
+  );
+  // ==========================================
+  // CARGAR FISH4 SPRITE SHEET
+  // ==========================================
 
-    images.fishes = await Promise.all(
+  const fish4Promise = loadImage(
+    ASSET_PATHS.fish4Sheet
+  );
+ 
 
-      ASSET_PATHS.fishes.map(async (fish) => {
+  // ==========================================
+  // GUARDAMOS FISH1 + FISH2
+  // ==========================================
 
-        const [normal, blink] = await Promise.all([
-          loadImage(fish.normal),
-          loadImage(fish.blink)
-        ]);
+  images.fishes = [];
 
-        return {
-          normal: normal.ok ? normal.img : null,
-          blink: blink.ok ? blink.img : null
-        };
+  for (let i = 0; i < ASSET_PATHS.fishes.length; i++) {
 
-      })
+    const normalResult = results[i * 2];
+    const blinkResult = results[i * 2 + 1];
 
-    );
+    images.fishes.push({
+
+      normal: normalResult.ok
+        ? normalResult.img
+        : null,
+
+      blink: blinkResult.ok
+        ? blinkResult.img
+        : null
+    });
   }
+
+
+  // ==========================================
+  // GUARDAMOS FISH3
+  // ==========================================
+
+  const fish3Result =
+    results[results.length - 1];
+
+  images.fish3Sheet =
+    fish3Result.ok
+      ? fish3Result.img
+      : null;
+
+  // ==========================================
+  // GUARDAMOS FISH4
+  // ==========================================
+
+  const fish4Result =
+    results[results.length - 1];
+
+  images.fish4Sheet =
+    fish4Result.ok
+      ? fish4Result.img
+      : null;
+}
 
 
   // ============================================================
@@ -213,8 +261,8 @@
     bubbles: [],
 
     hook: {
-      x: 240,
-      y: 160,
+      x: 335,
+      y: 315,
       radius: 18
     },
 
@@ -239,87 +287,58 @@
   // CREATE FISH
   // ============================================================
 
-  function createFish() {
+function createFish() {
 
-    const leftToRight = Math.random() > 0.5;
+  const leftToRight = Math.random() > 0.5;
 
-    const speed = rand(
-      GAME_CONFIG.fishSpeedMin,
-      GAME_CONFIG.fishSpeedMax
-    );
+  const speed = rand(
+    GAME_CONFIG.fishSpeedMin,
+    GAME_CONFIG.fishSpeedMax
+  );
 
+  // 0 = fish1
+  // 1 = fish2
+  // 2 = fish3
 
-    // Choose fish species
-    const spriteIndex = Math.floor(
-      rand(
-        0,
-        Math.max(images.fishes.length, 1)
-      )
-    );
+  const fishType = Math.floor(Math.random() * 3);
 
+  return {
 
-    return {
+    x: leftToRight
+      ? rand(80, 260)
+      : rand(700, 900),
 
-      // --------------------------------------------------------
-      // Position
-      // --------------------------------------------------------
+    y: rand(220, 440),
 
-      x: leftToRight
-        ? rand(80, 260)
-        : rand(700, 900),
+    w: rand(100, 140),
+    h: rand(50, 70),
 
-      y: rand(220, 440),
+    vx: leftToRight
+      ? speed
+      : -speed,
 
+    // Tipo de pez
+    fishType: fishType,
 
-      // --------------------------------------------------------
-      // Size
-      // --------------------------------------------------------
+    // ======================================
+    // BLINK
+    // Cada pez tiene su propio temporizador
+    // ======================================
 
-      w: rand(100, 140),
+    blinking: false,
 
-      h: rand(50, 70),
+    blinkTimer: rand(2, 5),
 
+    // ======================================
+    // SPRITE SHEET DE FISH3
+    // ======================================
 
-      // --------------------------------------------------------
-      // Movement
-      // --------------------------------------------------------
+    spriteFrame: 0,
 
-      vx: leftToRight
-        ? speed
-        : -speed,
+    spriteTimer: 0
 
-
-      // --------------------------------------------------------
-      // Fish species
-      // --------------------------------------------------------
-
-      spriteIndex: spriteIndex,
-
-
-      // --------------------------------------------------------
-      // Blink
-      // --------------------------------------------------------
-
-      blinking: false,
-
-      // Each fish starts blinking at a different time
-      blinkTimer: rand(2, 5),
-
-
-      // --------------------------------------------------------
-      // Bubbles
-      // --------------------------------------------------------
-
-      bubbleTimer: rand(2, 6),
-
-
-      // --------------------------------------------------------
-      // Catch state
-      // --------------------------------------------------------
-
-      caught: false
-    };
-  }
+  };
+}
 
 
   // ============================================================
@@ -456,6 +475,84 @@
 
     for (const f of state.fish) {
 
+
+      // ==========================================
+// BLINK — solo fish1 y fish2
+// ==========================================
+
+if (f.fishType === 0 || f.fishType === 1) {
+
+  f.blinkTimer -= dt;
+
+  if (f.blinkTimer <= 0) {
+
+    f.blinking = !f.blinking;
+
+    if (f.blinking) {
+
+      // Ojos cerrados durante 0.12 segundos
+      f.blinkTimer = 0.12;
+
+    } else {
+
+      // Siguiente parpadeo aleatorio
+      f.blinkTimer = rand(2, 5);
+
+    }
+  }
+}
+      // ==========================================
+// Animación del sprite sheet de Fish3
+// ==========================================
+// ==========================================
+// SPRITE SHEET — FISH3
+// ==========================================
+
+if (f.fishType === 2 && images.fish3Sheet) {
+
+  f.spriteTimer += dt;
+
+  const frameDuration =
+    1 / GAME_CONFIG.fish3FPS;
+
+  if (f.spriteTimer >= frameDuration) {
+
+    f.spriteTimer -= frameDuration;
+
+    f.spriteFrame++;
+
+    if (
+      f.spriteFrame >=
+      GAME_CONFIG.fish3FrameCount
+    ) {
+      f.spriteFrame = 0;
+    }
+  }
+}
+// SPRITE SHEET — FISH4
+// ==========================================
+
+if (f.fishType === 3 && images.fish4Sheet) {
+
+  f.spriteTimer += dt;
+
+  const frameDuration =
+    1 / GAME_CONFIG.fish4FPS;
+
+  if (f.spriteTimer >= frameDuration) {
+
+    f.spriteTimer -= frameDuration;
+
+    f.spriteFrame++;
+
+    if (
+      f.spriteFrame >=
+      GAME_CONFIG.fish4FrameCount
+    ) {
+      f.spriteFrame = 0;
+    }
+  }
+}
 
       // --------------------------------------------------------
       // Movement
@@ -632,139 +729,163 @@
   // ============================================================
   // DRAW FISH
   // ============================================================
+function drawFish(f) {
 
-  function drawFish(f) {
+  const facingRight = f.vx >= 0;
 
-    const facingRight =
-      f.vx >= 0;
+  const targetW = 100;
+  const targetH = 100;
 
+  ctx.save();
 
-    // ==========================================================
-    // GET FISH SPRITES
-    // ==========================================================
+  ctx.translate(f.x, f.y);
 
-    const fishSprites =
-      images.fishes[
-        f.spriteIndex
-      ];
-
-
-    let sprite = null;
+  ctx.scale(
+    facingRight ? 1 : -1,
+    1
+  );
 
 
-    if (fishSprites) {
+  // ==========================================
+  // FISH3 → SPRITE SHEET
+  // ==========================================
 
-      // Each fish uses ITS OWN blink sprite
-      if (
-        f.blinking &&
-        fishSprites.blink
-      ) {
+  if (
+    f.fishType === 2 &&
+    images.fish3Sheet
+  ) {
 
-        sprite =
-          fishSprites.blink;
+    const sheet = images.fish3Sheet;
 
-      } else {
+    const frameWidth =
+      sheet.width /
+      GAME_CONFIG.fish3Columns;
 
-        sprite =
-          fishSprites.normal;
-      }
+    const frameHeight =
+      sheet.height /
+      GAME_CONFIG.fish3Rows;
+
+    const column =
+      f.spriteFrame %
+      GAME_CONFIG.fish3Columns;
+
+    const row =
+      Math.floor(
+        f.spriteFrame /
+        GAME_CONFIG.fish3Columns
+      );
+
+    const sourceX =
+      column * frameWidth;
+
+    const sourceY =
+      row * frameHeight;
+
+    ctx.drawImage(
+
+      sheet,
+
+      // Parte del sprite sheet que queremos
+      sourceX,
+      sourceY,
+      frameWidth,
+      frameHeight,
+
+      // Dónde lo dibujamos
+      -targetW / 2,
+      -targetH / 2,
+      targetW,
+      targetH
+    );
+
+  }
+
+ // ==========================================
+  // FISH4 → SPRITE SHEET
+  // ==========================================
+
+  if (
+    f.fishType === 3 &&
+    images.fish4Sheet
+  ) {
+
+    const sheet = images.fish4Sheet;
+
+    const frameWidth =
+      sheet.width /
+      sheet.width /
+      GAME_CONFIG.fish4Columns;
+    const frameHeight =
+      sheet.height /
+      sheet.height /
+      GAME_CONFIG.fish4Rows;
+    const column =
+      f.spriteFrame %
+      f.spriteFrame %
+      GAME_CONFIG.fish4Columns;
+    const row =
+      Math.floor(
+        f.spriteFrame /
+        GAME_CONFIG.fish4Columns
+      );
+
+    const sourceX =
+      column * frameWidth;
+
+    const sourceY =
+      row * frameHeight;
+
+    ctx.drawImage(
+
+      sheet,
+
+      // Parte del sprite sheet que queremos
+      sourceX,
+      sourceY,
+      frameWidth,
+      frameHeight,
+
+      // Dónde lo dibujamos
+      -targetW / 2,
+      -targetH / 2,
+      targetW,
+      targetH
+    );
+
+  }
+  // ==========================================
+  // FISH1 + FISH2 → PNG NORMAL / BLINK
+  // ==========================================
+
+  else {
+
+    const fish =
+      images.fishes[f.fishType];
+
+    if (!fish) {
+      ctx.restore();
+      return;
     }
 
-
-    // ==========================================================
-    // DRAW
-    // ==========================================================
-
-    ctx.save();
-
-
-    ctx.translate(
-      f.x,
-      f.y
-    );
-
-
-    // Flip depending on direction
-    ctx.scale(
-      facingRight ? 1 : -1,
-      1
-    );
-
+    const sprite =
+      f.blinking && fish.blink
+        ? fish.blink
+        : fish.normal;
 
     if (sprite) {
 
-
-      // --------------------------------------------------------
-      // Keep original aspect ratio
-      // --------------------------------------------------------
-
-      const targetW =
-        f.w;
-
-
-      const targetH =
-        sprite.naturalHeight *
-        (
-          targetW /
-          sprite.naturalWidth
-        );
-
-
       ctx.drawImage(
-
         sprite,
-
         -targetW / 2,
-
         -targetH / 2,
-
         targetW,
-
         targetH
       );
-
-
-    } else {
-
-
-      // --------------------------------------------------------
-      // Fallback
-      // --------------------------------------------------------
-
-      ctx.fillStyle =
-        fallbackFishColors[
-          f.spriteIndex %
-          fallbackFishColors.length
-        ];
-
-
-      ctx.beginPath();
-
-
-      ctx.ellipse(
-
-        0,
-
-        0,
-
-        f.w / 2,
-
-        f.h / 2,
-
-        0,
-
-        0,
-
-        Math.PI * 2
-      );
-
-
-      ctx.fill();
     }
-
-
-    ctx.restore();
   }
+
+  ctx.restore();
+}
 
 
   // ============================================================
@@ -905,13 +1026,13 @@
 
         images.rod,
 
-        40,
+        170,
 
-        20,
+        275,
 
-        260,
+        190,
 
-        170
+        125
       );
 
     } else {
@@ -924,15 +1045,15 @@
       ctx.beginPath();
 
       ctx.moveTo(
-        70,
-        40
+        190,
+        300
       );
 
       ctx.quadraticCurveTo(
-        210,
-        30,
-        280,
-        150
+        285,
+        285,
+        335,
+        315
       );
 
       ctx.stroke();
@@ -951,8 +1072,8 @@
     ctx.beginPath();
 
     ctx.moveTo(
-      280,
-      150
+      335,
+      315
     );
 
     ctx.lineTo(
@@ -1024,8 +1145,8 @@
         );
 
 
-      //ctx.fillStyle =
-      // "#fff7a8";
+      ctx.fillStyle =
+       "#fff7a8";
 
 
       ctx.fillRect(
