@@ -1,0 +1,194 @@
+/* ============================================================
+   GLOBAL
+   ============================================================ */
+
+:root {
+
+  --page-bg-1: #d8f6ff;
+  --page-bg-2: #b7edff;
+  --page-bg-3: #8fdaff;
+
+  --frame-border: #ffffff;
+
+  --ui-color: #083450;
+
+  --legend-bg: #ffffff;
+
+  --legend-color: #0e3a56;
+
+}
+
+
+
+/* ============================================================
+   RESET
+   ============================================================ */
+
+* {
+
+  box-sizing: border-box;
+
+}
+
+
+
+/* ============================================================
+   BODY
+   ============================================================ */
+
+body {
+
+  margin: 0;
+
+  min-height: 100vh;
+
+  display: grid;
+
+  place-items: center;
+
+  background:
+
+    radial-gradient(
+
+      circle at 50% 20%,
+
+      var(--page-bg-1) 0%,
+
+      var(--page-bg-2) 40%,
+
+      var(--page-bg-3) 100%
+
+    );
+
+  font-family:
+
+    Arial,
+    Helvetica,
+    sans-serif;
+
+}
+
+
+
+/* ============================================================
+   GAME FRAME
+   ============================================================ */
+
+.frame {
+
+  width:
+
+    min(
+      92vw,
+      960px
+    );
+
+  border:
+
+    6px solid
+    var(--frame-border);
+
+  border-radius:
+
+    18px;
+
+  box-shadow:
+
+    0 18px 50px
+    rgba(
+      0,
+      0,
+      0,
+      0.22
+    );
+
+  overflow:
+
+    hidden;
+
+  background:
+
+    #ffffff;
+
+}
+
+
+
+/* ============================================================
+   CANVAS
+   ============================================================ */
+
+canvas {
+
+  width:
+
+    100%;
+
+  aspect-ratio:
+
+    16 / 9;
+
+  display:
+
+    block;
+
+  background:
+
+    linear-gradient(
+
+      var(--page-bg-1)
+      0 36%,
+
+      #3db6e6
+      36% 88%,
+
+      #f0d8a8
+      88%
+
+    );
+
+  touch-action:
+
+    none;
+
+}
+
+
+
+/* ============================================================
+   LEGEND
+   ============================================================ */
+
+.legend {
+
+  padding:
+
+    10px 14px;
+
+  font-size:
+
+    14px;
+
+  color:
+
+    var(--legend-color);
+
+  background:
+
+    var(--legend-bg);
+
+  line-height:
+
+    1.5;
+
+}
+
+
+
+.legend strong {
+
+  font-weight:
+
+    800;
+
+}
